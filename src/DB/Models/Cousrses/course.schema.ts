@@ -23,6 +23,7 @@ export class Course {
   lessons: mongoose.Types.ObjectId[]; // array of lesson IDs
 
   //Todo: locked && levels
+  //T
 }
 
 export const CourseSchema = SchemaFactory.createForClass(Course);
