@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { Document } from 'mongoose';
+import mongoose from 'mongoose';
 
 @Schema({ timestamps: true })
 export class Course {
@@ -19,6 +19,10 @@ export class Course {
   @Prop({ default: false })
   isTutorial: boolean;              // true = assigned after low assessment score
 
+  @Prop({ default: [] })
+  lessons: mongoose.Types.ObjectId[]; // array of lesson IDs
+
+  //Todo: locked && levels
 }
 
 export const CourseSchema = SchemaFactory.createForClass(Course);
