@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
+import mongoose from "mongoose"
 import { UserLevels, UserRoles } from "src/common"
 
 
@@ -36,6 +37,21 @@ export class User {
 
   @Prop()
   profilePic?: string; 
+
+  @Prop({ default: 0 })
+  currentScore: number;
+
+  @Prop({ default: true })
+  isFirstTime: boolean;
+
+  @Prop({
+  type: [{
+    badge: { type: mongoose.Schema.Types.ObjectId, ref: 'Badge' },
+    earnedAt: { type: Date, default: Date.now }
+  }],
+  default: []
+})
+Badges: { badge: mongoose.Types.ObjectId; earnedAt: Date }[];
 }
 //Schema 
 export const UserSchema = SchemaFactory.createForClass(User)

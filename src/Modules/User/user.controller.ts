@@ -13,6 +13,6 @@ export class UserController {
     //@Roles(['user'])
     //@SetMetadata('roles',['admin'])
     profile(@Req() req:Request) {
-        return {message : "This is the user profile page", this.userService.: req["user"]};
+        return {message : "This is the user profile page"};
     }
 }
