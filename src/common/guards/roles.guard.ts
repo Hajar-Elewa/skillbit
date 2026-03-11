@@ -12,9 +12,9 @@ export class RoleGuard implements CanActivate {
     constructor(private reflector: Reflector) {}
     canActivate(context: ExecutionContext): boolean {
     //const roles = this.reflector.get(Roles, context.getHandler()); //reflector way to get the metadata
-    const roles = this.reflector.get('roles', context.getHandler());
+    const roles = this.reflector.get('roles', context.getHandler());//get the roles from the metadata that we set in the controller using the Roles decorator.
     const request = context.switchToHttp().getRequest();
-    console.log(request.user.role);
+    console.log(roles);
     if (!roles.includes(request.user.role)) {
     throw new UnauthorizedException('not allowed for you');
     }

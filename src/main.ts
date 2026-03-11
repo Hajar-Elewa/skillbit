@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import 'dotenv/config'
+import cors from "cors"
 
 
 async function bootstrap() {
@@ -20,6 +21,11 @@ async function bootstrap() {
   */
   const port = Number(process.env.PORT || 7000)//number because process.env.PORT is string and app.listen need number.
   
+   app.use(cors({
+    origin: 'http://localhost:3000', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // allow only these HTTP methods
+    credentials: true, // allow cookies to be sent with requests
+  }))
 
    app.useGlobalPipes(//validation pipe is used to validate the incoming request body and query params before it reaches the controller. It can be used to validate the data and throw an error if the data is invalid.
      new ValidationPipe({

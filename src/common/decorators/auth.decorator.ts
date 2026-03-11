@@ -5,7 +5,6 @@ import { RoleGuard } from '../guards/roles.guard';
 
 export function Auth(...roles: string[]) {
     return applyDecorators(Roles(...roles), UseGuards(AuthGuard, RoleGuard));
-}
+}//this is a custom decorator that combines the functionality of both AuthGuard and RoleGuard. It takes in an array of roles as arguments and applies the Roles decorator to set the required roles for the route, and also applies the AuthGuard and RoleGuard to protect the route.
 
-Auth('user', 'admin'); 
-// [ ] >> 'user', 'admin' >> [ ] >> 'user', 'admin' >> ... >> 'user', 'admin' 
+Auth('user', 'admin'); // This is how you would use the Auth decorator in a controller. It will ensure that only users with the 'user' or 'admin' role can access the route.

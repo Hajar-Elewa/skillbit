@@ -1,25 +1,20 @@
 import { Body, Controller, Post ,Req,Res, UnauthorizedException } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { confirmEmailDto, loginDto, signUpDto } from "./dto";
+import { confirmEmailDto, forgotPasswordDto, loginDto, resendOtpDto, resetPasswordDto, signUpDto } from "./dto";
 import { Throttle } from "@nestjs/throttler";
 import type { Response,Request } from "express";
 
 @Controller("auth")
 export class AuthController {
     constructor(private readonly authService:AuthService) {}
-  @Post('signup')
-   async signup(@Body()
-                 signUpDto:signUpDto
-        // new ValidationPipe({ whitelist: true }))
-        //  body:signUpDto
 
-        // new ZodPipe(signupSchema))
-        //   body:signUpZodDto
-    )
+  @Post('signup')
+   async signup(@Body()  signUpDto:signUpDto)
         {
         const user= await this.authService.signUp(signUpDto)
-        return {message:'User created successfully',data:user}
+        return {message:'Account created successfully , Please confirm your email',data:user}
     }
+
 
     @Post('confirm-email')
     async confirmEmail(@Body() confirmEmailDto:confirmEmailDto) {
@@ -28,48 +23,54 @@ export class AuthController {
         return {message:'Email confirmed successfully',data:result}
     }
 
+
     @Throttle({ default: { limit: 3, ttl: 60 } }) // max 3 requests per 60 seconds
     @Post('resend-otp')
-    async resendOtp(@Body('email') email: string) {
-        await this.authService.resendOtp(email)
+    async resendOtp(@Body() resendOtpDto:resendOtpDto) {
+        await this.authService.resendOtp(resendOtpDto.email)
         return { message: 'OTP resent successfully, please check your email' }  
     }
 
 
+    @Post('google-login')
+    async googleLogin(@Body('idToken') idToken: string) {
+        const { accessToken, refreshToken } = await this.authService.googleLogin({ idToken }) 
+         return { accessToken, refreshToken }
+    }
+
     @Post('login')
-   async login(@Body() loginDto: loginDto, @Res() res: Response) {
+    async login(@Body() loginDto: loginDto, @Res({ passthrough: true }) res: Response) {
 
       const { accessToken, refreshToken } = await this.authService.login(loginDto)
 
-  // store refreshToken in httpOnly cookie
-      res.cookie('refreshToken', refreshToken, {
-         httpOnly: true,                       // javascript cannot read it
-         secure: true,                         // only sent over HTTPS
-         sameSite: 'strict',                   // prevents CSRF attacks
-         maxAge: 7 * 24 * 60 * 60 * 1000      // 7 days in milliseconds
-  })
+   // store refreshToken in httpOnly cookie
+       res.cookie('refreshToken', refreshToken, {
+         httpOnly: true,
+         secure: false, // لازم تبقى false على localhost
+         sameSite: 'lax',
+         maxAge: 7 * 24 * 60 * 60 * 1000
+})
 
-      //return {message:'Login successful', accessToken}
+     // return {message:'Login successful', accessToken}
       return res.json({ accessToken })
 }
+ 
+     @Post('refresh')
+    async refreshToken(@Body() body: { refreshToken: string }) {
+  const result = await this.authService.refreshToken(body.refreshToken)
+  return { message: 'Token refreshed successfully', data: result }
+   }
 
-    @Post('refresh')
-     async refresh(@Req() req: Request, @Res() res: Response) {
-
-  // read refreshToken from cookie automatically
-  const refreshToken = req.cookies['refreshToken']
-
-  if(!refreshToken) {
-    throw new UnauthorizedException('No refresh token found, please login again')
-  }
-
-  const { accessToken } = await this.authService.login(refreshToken)
-
-  return res.json({ accessToken })
+    @Post('forgot-password')
+    async forgotPassword(@Body() body: forgotPasswordDto) {
+       await this.authService.forgotPassword(body.email)
+       return { message: 'OTP sent to your email' }
 }
-// @Post('logout')
-// async logout() {
-//   await this.authService.logout()
-//   return { message: 'User logged out successfully' }
-// }
+
+    @Post('reset-password')
+    async resetPassword(@Body() resetPasswordDto: resetPasswordDto) {
+       const { email, otp, newPassword } = resetPasswordDto
+         await this.authService.resetPassword(email, otp, newPassword)
+         return { message: 'Password reset successfully, you can now login' }
+}
 }

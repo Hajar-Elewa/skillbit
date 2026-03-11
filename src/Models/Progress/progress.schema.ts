@@ -1,4 +1,3 @@
-// progress/schemas/progress.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 
@@ -28,7 +27,7 @@ export class Progress {
   })
   completedLessons: mongoose.Types.ObjectId[];
 
- // PERFORMANCE
+ 
   @Prop({ default: 0 })
   score: number;              // grows as user completes quizzes → 30
 

@@ -23,12 +23,45 @@ export class signUpDto {
 
     @IsString()
     @IsIn(Object.values(UserRoles)) // Ensure role is one of the allowed values
-     role:string;
+    role:string;
 
     @IsString()
-    @IsIn(Object.values(UserLevels))
+    @IsIn(Object.values(UserLevels)) // Ensure level is one of the allowed values
     level:string;
+     
+     @IsNotEmpty()
+    isFirstTime:boolean;
+
 }
+
+export class googleLoginDto {
+    @IsString()
+    @IsNotEmpty()
+    idToken:string;   
+}
+
+export class googleSignUpDto {
+    @IsString()
+    @IsNotEmpty()
+    fullname:string;
+
+    @IsString()
+    @IsEmail()
+    email:string;   
+
+    @IsString()
+    @IsNotEmpty()
+    googleId:string;
+
+
+    @IsString()
+    @IsIn(Object.values(UserRoles)) // Ensure role is one of the allowed values
+     role:string;
+
+    @IsNotEmpty()
+    isFirstTime:boolean;
+}
+
 export class confirmEmailDto {
     @IsString()
     @IsEmail()
@@ -38,6 +71,7 @@ export class confirmEmailDto {
     @IsNotEmpty()
     otp:string;
 }
+
 export class loginDto {
     @IsString()
     @IsNotEmpty()
@@ -47,4 +81,33 @@ export class loginDto {
     @IsStrongPassword()
     @IsNotEmpty()
     password:string;
+}
+ 
+export class resendOtpDto {
+    @IsString()
+    @IsNotEmpty()
+    @IsEmail()
+    email:string;
+}
+
+export class forgotPasswordDto {
+    @IsString()
+    @IsNotEmpty()
+    @IsEmail()
+    email:string;
+}   
+
+export class resetPasswordDto {
+    @IsString()
+    @IsNotEmpty()
+    @IsEmail()
+    email:string;
+    
+    @IsString()
+    @IsNotEmpty()
+    otp:string;
+
+    @IsStrongPassword()
+    @IsNotEmpty()
+    newPassword:string;
 }

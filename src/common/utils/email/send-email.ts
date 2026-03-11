@@ -18,7 +18,9 @@ export const sendEmail = async (
   options: nodemailer.SendMailOptions,
 )=> {
   await transporter.sendMail(options) 
+  return true
 }
+
 
 //every time we call sendEmail function it will create a new transporter which is not efficient so we can create transporter once and reuse it every time we call sendEmail function.ودا في الطريقة اللي فوق
 // export async function sendEmail(sendMailOptions: nodemailer.SendMailOptions) {

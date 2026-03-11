@@ -56,7 +56,7 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
     update,
     options = {},
   }: {
-    id: Types.ObjectId
+    id: string | Types.ObjectId
     update: UpdateQuery<T>
     options?: QueryOptions<T>
   }) {
@@ -79,7 +79,7 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
     id,
     options,
   }: {
-    id?: Types.ObjectId
+    id?: string | Types.ObjectId
     options?: QueryOptions<T>
   }) {
     return await this.model.findByIdAndDelete(id, options)
