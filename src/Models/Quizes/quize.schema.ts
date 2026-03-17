@@ -9,8 +9,6 @@ export class QuizAttempt  {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name, required: true })
   userId: mongoose.Schema.Types.ObjectId;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Course.name, required: true })
-  courseId: mongoose.Schema.Types.ObjectId;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, required: true })
   lessonId: mongoose.Schema.Types.ObjectId;
@@ -51,6 +49,7 @@ export class QuizAttempt  {
 
   @Prop({ type: Date, default: Date.now })
   attemptedAt: Date;
+  //default locked
 
 }
 
