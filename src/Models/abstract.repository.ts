@@ -1,12 +1,10 @@
 import {
   Model,
   MongooseBaseQueryOptions,
-  MongooseUpdateQueryOptions,
   ProjectionType,
   QueryOptions,
   Types,
   UpdateQuery,
-  UpdateWithAggregationPipeline,
   QueryFilter,
 } from 'mongoose'
 
@@ -15,7 +13,7 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
   constructor(private readonly model: Model<T>) {}
 
 
-   async create( data: Partial<T> ) : Promise<T> {
+   async create( data: any ) : Promise<T> {
     return await this.model.create(data)
   }
 
@@ -28,11 +26,11 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
   }
 
   async findOne({
-    filter,
+    filter={},
     projection = {},
     options = {},
   }: {
-    filter?: QueryFilter<T>
+    filter?: QueryFilter<T> | any
     projection?: ProjectionType<T>
     options?: QueryOptions<T>
   }) {
@@ -51,19 +49,7 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
     return await this.model.findById(id, projection, options)
   }
 
-  async findByIdAndUpdate({
-    id,
-    update,
-    options = {},
-  }: {
-    id: string | Types.ObjectId
-    update: UpdateQuery<T>
-    options?: QueryOptions<T>
-  }) {
-    return await this.model.findByIdAndUpdate(id, update, options)
-  }
-
-  async findOneAndUpdate({
+  async Update({
     filter,
     update,
     options = {},
@@ -75,6 +61,18 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
     return await this.model.findOneAndUpdate(filter, update, options)
   }
 
+   async findByIdAndUpdate({
+    id,
+    update,
+    options = {},
+  }: {
+    id: string | Types.ObjectId
+    update: UpdateQuery<T>
+    options?: QueryOptions<T>
+  }) {
+    return await this.model.findByIdAndUpdate(id, update, options)
+  }
+  
   async findByIdAndDelete({
     id,
     options,
@@ -95,16 +93,16 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
     return await this.model.findOneAndDelete(filter, options)
   }
 
-  async updateOne({
+  async findOneAndUpdate({
     filter,
     update,
     options = {},
   }: {
-    filter: QueryFilter<T>
-    update: UpdateQuery<T> | UpdateWithAggregationPipeline
-    options?: MongooseUpdateQueryOptions<T>
+    filter: QueryFilter<T> | any
+    update: UpdateQuery<T>
+    options?: QueryOptions<T>
   }) {
-    return await this.model.updateOne(filter, update, options)
+    return await this.model.findOneAndUpdate(filter, update, options)
   }
 
   async deleteOne({
@@ -116,4 +114,16 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
   }) {
     return await this.model.deleteOne(filter, options)
   }
+
+  async deleteMany({
+    filter,
+    options = {},
+  }: {
+    filter: QueryFilter<T>
+    options?: MongooseBaseQueryOptions<T>
+  }) {
+    return await this.model.deleteMany(filter, options)
+  }
+
+  
 }

@@ -73,7 +73,7 @@ constructor(
 
         if(!user) {
             //if not exist create new user with data from google and mark email as verified since google already verified it
-            user = await this.userRepo.create({
+           const createdUser = await this.userRepo.create({
                 fullname: payload.name,
                 email: payload.email,
                 googleId: payload.sub,
@@ -86,11 +86,11 @@ constructor(
 
         //generate accessToken and refreshToken for the user
         const accessToken = this.tokenService.sign(
-            { _id: user['_id'], email: user.email },
+            { _id: createdUser['_id'], email: user.email },
             { secret: process.env.JWT_SECRET, expiresIn: '3h' }
         ) 
         const refreshToken = this.tokenService.sign(
-            { _id: user['_id'], email: user.email },
+            { _id: createdUser['_id'], email: user.email },
             { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '4d' }
         )
         
@@ -111,13 +111,13 @@ constructor(
             throw new BadRequestException('OTP expired, request a new one')
         }
 
-        await this.userRepo.update({email},
-            { 
-          $unset: {
-          emailOtp: ""
-        },
+        await this.userRepo.Update({
+          filter: {email},
+          update: { 
+          $unset: { emailOtp: "" },
          isVerified: true
-       })
+       }
+    })
    
   return true
 }
@@ -148,15 +148,15 @@ constructor(
             throw new InternalServerErrorException('Failed to send email, please try again')
         }
 
-             await this.userRepo.update(
-                  { email },
-                  {
+             await this.userRepo.Update({
+                  filter: { email },
+                  update: {
                     emailOtp: {
                     code: otp,
                     expiresAt: new Date(Date.now() + 10 * 60 * 1000) // fresh 10 minutes
                 }
     }
-  )
+  })
   return true
 }
 
@@ -237,15 +237,15 @@ constructor(
              throw new InternalServerErrorException('Failed to send email, please try again')
           }
 
-       await this.userRepo.update(
-          { email },
-          {
+       await this.userRepo.Update({
+          filter: { email },
+          update: {
            emailOtp: {
            code: otp,
            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
       }
     }
-  )
+  })
 
   return true
 }
@@ -265,15 +265,15 @@ constructor(
              throw new BadRequestException('New password cannot be same as old password')
          }
 
-        await this.userRepo.update(
-            { email },
-            {
+        await this.userRepo.Update(
+            { filter: { email },
+            update: {
                $unset: {
                emailOtp: ""
               },
               password: await Hash(newPassword)
               }
-  )
+  })
   return true
 }
 }

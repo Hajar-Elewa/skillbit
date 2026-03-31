@@ -2,7 +2,6 @@ import { BadRequestException, Injectable, NotFoundException, UseGuards } from "@
 import { UserRepo } from "src/Models/User/user.repo";
 import { changePasswordDto, updateProfileDto } from "./dto";
 import { compare, Hash } from "src/common";
-import { TUser } from "src/DB/Models/User/user.model";
 
 @Injectable()
 export class UserService {

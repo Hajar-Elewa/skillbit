@@ -5,7 +5,10 @@ import { Achievement } from '../Achievements/achievement.schema';
 import { Enrollment } from '../Enrollments/enrollment.schema';
 import { Contest } from '../Contests/cotest.schema';
 
-
+export enum Role {
+  USER = 'user',
+  ADMIN = 'admin',
+}
 
 @Schema({timestamps:true , discriminatorKey:'role'})
 export class User  {
@@ -21,6 +24,9 @@ export class User  {
      required: function() { return this.userAgent === 'local' }, // password is required only for local users mean just return true if userAgent is local and return false if userAgent is google
     })
   password: string;
+
+  @Prop({ type: String, enum: Role, default: Role.USER })
+  role: Role;
 
   @Prop({ type: String, enum: ['local', 'google'], default: 'local' })
   userAgent: string;
