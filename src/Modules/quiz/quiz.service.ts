@@ -1,17 +1,19 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Types } from 'mongoose';
 import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
 import { LessonRepo } from 'src/Models/Lessons/lesson.repo';
 import { CourseRepo } from 'src/Models/Cousrses/course.repo';
-import { LevelRepo } from 'src/Models/Levels/level.repo';
-import { CourseType } from 'src/Models/Cousrses/course.schema';
 import { CreateQuizDto } from './dto/create-quiz.dto';
+import { UpdateQuizDto } from './dto/update-quiz.dto';
+import { QuizAttemptRepo } from 'src/Models/Quizes/quizAttempt.repo';
+import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
 import { SubmitQuizDto } from './dto/submit-quiz.dto';
+import { UserRepo } from 'src/Models/User/user.repo';
 
 @Injectable()
 export class QuizService {
@@ -19,239 +21,261 @@ export class QuizService {
     private readonly quizRepo: QuizRepo,
     private readonly lessonRepo: LessonRepo,
     private readonly courseRepo: CourseRepo,
-    private readonly levelRepo: LevelRepo,
+    private readonly quizAttemptRepo: QuizAttemptRepo,
+    private readonly enrollmentRepo: EnrollmentRepo,
+    private readonly userRepo: UserRepo,
   ) {}
 
-  // ─────────────────────────────────────────────────────────────────
-  //  ADMIN – create a quiz for a lesson
-  // ─────────────────────────────────────────────────────────────────
-
-  async createQuiz(dto: CreateQuizDto) {
-    const lesson = await this.lessonRepo.findById({ id: dto.lessonId });
-    if (!lesson) throw new NotFoundException('Lesson not found');
-
-    // Each lesson has at most one quiz definition (per difficulty)
-    const existing = await this.quizRepo.findOne({
-      filter: {
-        lessonId: new Types.ObjectId(dto.lessonId),
-        difficulty: dto.difficulty,
-      } as any,
-    });
-    if (existing) throw new BadRequestException('A quiz with this difficulty already exists for this lesson');
-
-    return this.quizRepo.create({
-      lessonId: new Types.ObjectId(dto.lessonId) as any,
-      difficulty: dto.difficulty as any,
-      questions: dto.questions as any,
-    });
+ async createQuiz(createQuizDto: CreateQuizDto) {
+  const course = await this.courseRepo.findById({ id: createQuizDto.courseId })
+  if (!course) {
+    throw new NotFoundException('Course not found')
   }
 
-  /** GET all quizzes for a lesson (to let admin review) */
-  getQuizzesByLesson(lessonId: string) {
-    return this.quizRepo.find({ lessonId: new Types.ObjectId(lessonId) } as any);
-  }
-
-  // ─────────────────────────────────────────────────────────────────
-  //  USER – start + submit a quiz attempt
-  // ─────────────────────────────────────────────────────────────────
-
-  /**
-   * Start a quiz attempt for a lesson — creates a fresh QuizAttempt document
-   * with questions copied from the quiz definition (answers hidden from user).
-   */
-  async startQuiz(userId: string, lessonId: string, difficulty: string) {
-    const lesson = await this.lessonRepo.findById({ id: lessonId });
-    if (!lesson) throw new NotFoundException('Lesson not found');
-    if ((lesson as any).isLocked) throw new ForbiddenException('This lesson is still locked');
-
-    const quizDef = await this.quizRepo.findOne({
-      filter: { lessonId: new Types.ObjectId(lessonId), difficulty } as any,
-    });
-    if (!quizDef) throw new NotFoundException(`No ${difficulty} quiz found for this lesson`);
-
-    // Don't allow re-attempt if already passed
-    const alreadyPassed = await this.quizRepo.findOne({
-      filter: { userId: new Types.ObjectId(userId), lessonId: new Types.ObjectId(lessonId), passed: true } as any,
-    });
-    if (alreadyPassed) throw new BadRequestException('You already passed this quiz');
-
-    // Create a fresh attempt (questions without the correct field exposed)
-    const questions = (quizDef as any).questions.map((q: any) => ({
-      question: q.question,
-      options: q.options,
-      correct: q.correct,   // stored in DB but API controller should omit from response
-      chosen: null,
-    }));
-
-    return this.quizRepo.create({
-      userId: new Types.ObjectId(userId) as any,
-      lessonId: new Types.ObjectId(lessonId) as any,
-      difficulty: difficulty as any,
-      questions,
-    });
-  }
-
-  /**
-   * Submit answers for an active quiz attempt.
-   * Calculates score → if >= lesson.passScore → unlock next lesson/course/level.
-   */
-  async submitQuiz(userId: string, lessonId: string, dto: SubmitQuizDto) {
-    const lesson = await this.lessonRepo.findById({ id: lessonId });
-    if (!lesson) throw new NotFoundException('Lesson not found');
-
-    if ((lesson as any).isLocked) throw new ForbiddenException('This lesson is still locked');
-
-    // Find the latest un-passed attempt for this user + lesson
-    const attempt = await this.quizRepo.findOne({
-      filter: {
-        userId: new Types.ObjectId(userId),
-        lessonId: new Types.ObjectId(lessonId),
-        passed: { $ne: true },
-      } as any,
-    });
-    if (!attempt) throw new NotFoundException('No active quiz attempt found. Please start the quiz first.');
-
-    const questions = (attempt as any).questions as {
-      question: string;
-      options: string[];
-      correct: string;
-      chosen: string | null;
-    }[];
-
-    // Apply chosen answers
-    let correctCount = 0;
-    for (const ans of dto.answers) {
-      const q = questions[ans.questionIndex];
-      if (!q) continue;
-      q.chosen = ans.chosen;
-      if (q.chosen === q.correct) correctCount++;
+    const lesson = await this.lessonRepo.findById({ id: createQuizDto.lessonId })
+    if (!lesson) {
+      throw new NotFoundException('Lesson not found')
     }
 
-    const total = questions.length;
-    const score = total > 0 ? Math.round((correctCount / total) * 100) : 0;
-    const passed = score >= (lesson as any).passScore;
-
-    await this.quizRepo.findByIdAndUpdate({
-      id: (attempt as any)._id,
-      update: { questions, correctCount, score, passed },
-      options: { new: true },
-    });
-
-    if (passed) {
-      await this._unlockNext(lesson as any);
+    // check if quiz already exists for this lesson
+    const existingQuiz = await this.quizRepo.findOne({
+      filter: { lessonId: createQuizDto.lessonId }
+    })
+    if (existingQuiz) {
+      throw new ConflictException('Quiz already exists for this lesson')
     }
+  
 
-    return { score, passed, correctCount, total };
+  const quiz = await this.quizRepo.create(createQuizDto)
+  return quiz
+}
+
+ async updateQuiz(quizId: string, updateQuizDto: UpdateQuizDto) {
+  const quiz = await this.quizRepo.findByIdAndUpdate({
+    id: quizId,
+    update: updateQuizDto,
+    options: { new: true }
+  })
+
+  if (!quiz) {
+    throw new NotFoundException('Quiz not found')
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  //  PRIVATE UNLOCK CHAIN
-  // ─────────────────────────────────────────────────────────────────
+  return quiz
+}
+ 
+async deleteQuiz(quizId: string) {
+  // 1. delete quiz
+  const quiz = await this.quizRepo.findByIdAndDelete({ id: quizId })
+  if (!quiz) {
+    throw new NotFoundException('Quiz not found')
+  }
 
-  private async _unlockNext(lesson: any) {
-    const courseLessons = await this.lessonRepo.find(
-      { course: lesson.course },
-      {},
-      { sort: { order: 1 } },
-    );
+  // 2. delete all attempts related to this quiz
+  await this.quizAttemptRepo.deleteOne({ filter: { quizId: quizId as any } }) 
+  
+  return true
+}
+ 
+async startQuiz(quizId: string, userId: string) {
+  // 1. check quiz exists
+  const quiz = await this.quizRepo.findById({ id: quizId })
+  if (!quiz) {
+    throw new NotFoundException('Quiz not found')
+  }
 
-    const currentIdx = courseLessons.findIndex(
-      (l: any) => l._id.toString() === lesson._id.toString(),
-    );
+  // 2. check enrollment
+  const enrollment = await this.enrollmentRepo.findOne({
+    filter: { userId, courseId: quiz.courseId }
+  })
+  if (!enrollment) {
+    throw new ForbiddenException('You are not enrolled in this course')
+  }
 
-    const nextLesson = courseLessons[currentIdx + 1];
+  // 3. check previous quiz passed
+  if (quiz.order > 1) {
+    const previousQuiz = await this.quizRepo.findOne({
+      filter: { courseId: quiz.courseId, order: quiz.order - 1 }
+    })
+    if (previousQuiz) {
+      const isPreviousPassed = enrollment.completedQuizes
+        .some(id => id.toString() === previousQuiz._id.toString())
+      if (!isPreviousPassed) {
+        throw new ForbiddenException('Please pass the previous quiz first')
+      }
+    }
+  }
 
+  // 4. check if already inProgress attempt exists → resume it
+  const existingAttempt = await this.quizAttemptRepo.findOne({
+    filter: { userId, quizId, status: 'in-progress' }
+  })
+  if (existingAttempt) {
+    const questions = quiz.questions.map(({ question, options }) => ({
+      question,
+      options
+    }))
+    return {
+      attemptId: existingAttempt._id,
+      quizId: quiz._id,
+      difficulty: quiz.difficulty,
+      timeLimit: quiz.timeLimit,
+      passingScore: quiz.passingScore,
+      questions
+    }
+  }
+
+  // 5. create new inProgress attempt
+  const attempt = await this.quizAttemptRepo.create({
+    userId,
+    quizId,
+    courseId: quiz.courseId,
+    lessonId: quiz.lessonId,
+    status: 'in-progress'
+  })
+
+  // 6. return questions without correctAnswerIndex
+  const questions = quiz.questions.map(({ question, options }) => ({
+    question,
+    options
+  }))
+
+  return {
+    quizTitle: quiz.title,
+    difficulty: quiz.difficulty,
+    timeLimit: quiz.timeLimit,
+    passingScore: quiz.passingScore,
+    questions
+  }
+}
+
+async submitQuiz(submitQuizDto: SubmitQuizDto, userId: string) {
+  const { quizId, answers, timeTaken } = submitQuizDto
+
+  // 1. check quiz exists
+  const quiz = await this.quizRepo.findById({ id: quizId })
+  if (!quiz) {
+    throw new NotFoundException('Quiz not found')
+  }
+
+  // 2. check if user started the quiz
+  const attempt = await this.quizAttemptRepo.findOne({
+    filter: { userId, quizId, status: 'in-progress' }
+  })
+  if (!attempt) {
+    throw new ForbiddenException('Please start the quiz first')
+  }
+
+  // 3. check all questions are answered
+  if (answers.length !== quiz.questions.length) {
+    throw new BadRequestException('Please answer all questions')
+  }
+
+  // 4. calculate score
+  let correctCount = 0
+  quiz.questions.forEach((q, index) => {
+    if (q.correctAnswerIndex === answers[index]) {
+      correctCount++
+    }
+  })
+
+  const score = Math.round((correctCount / quiz.questions.length) * 100)
+  const passed = score >= quiz.passingScore
+
+  // 5. calculate xp
+  const xpEarned = passed ? quiz.earnedXp : 0
+  const xpLost = !passed ? Math.round(quiz.earnedXp * 0.1) : 0
+
+  // 6. update attempt
+  await this.quizAttemptRepo.findByIdAndUpdate({
+    id: attempt._id,
+    update: {
+      answers,
+      correctCount,
+      score,
+      passed,
+      timeTaken: timeTaken || 0,
+      xpEarned,
+      xpLost,
+      status: 'submitted'
+    }
+  })
+
+  // 7. if passed → update enrollment + user score + unlock next lesson
+  if (passed) {
+    // add quiz to completedQuizes
+    await this.enrollmentRepo.findOneAndUpdate({
+      filter: { userId, courseId: quiz.courseId },
+      update: { $push: { completedQuizes: quizId } }
+    })
+
+    // add xp to user
+    await this.userRepo.findByIdAndUpdate({
+      id: userId,
+      update: { $inc: { score: xpEarned } }
+    })
+
+    // unlock next lesson
+    const nextLesson = await this.lessonRepo.findOne({
+      filter: { courseId: quiz.courseId, order: quiz.order + 1 }
+    })
     if (nextLesson) {
       await this.lessonRepo.findByIdAndUpdate({
-        id: (nextLesson as any)._id,
-        update: { isLocked: false },
-      });
-      return;
-    }
-
-    // Last lesson in the course → unlock next mandatory course
-    await this._unlockNextCourse(lesson.course.toString());
-  }
-
-  private async _unlockNextCourse(courseId: string) {
-    const course = await this.courseRepo.findById({ id: courseId });
-    if (!course) return;
-
-    const mandatoryCourses = await this.courseRepo.find(
-      { level: (course as any).level, type: CourseType.MANDATORY },
-      {},
-      { sort: { order: 1 } },
-    );
-
-    const currentIdx = mandatoryCourses.findIndex(
-      (c: any) => c._id.toString() === courseId,
-    );
-
-    const nextCourse = mandatoryCourses[currentIdx + 1];
-
-    if (nextCourse) {
-      await this.courseRepo.findByIdAndUpdate({
-        id: (nextCourse as any)._id,
-        update: { isLocked: false },
-      });
-      // Unlock its first lesson
-      const firstLesson = await this.lessonRepo.findOne({
-        filter: { course: (nextCourse as any)._id },
-        options: { sort: { order: 1 } } as any,
-      });
-      if (firstLesson) {
-        await this.lessonRepo.findByIdAndUpdate({
-          id: (firstLesson as any)._id,
-          update: { isLocked: false },
-        });
-      }
-      return;
-    }
-
-    // Last mandatory course in level → unlock next level
-    await this._unlockNextLevel((course as any).level.toString());
-  }
-
-  private async _unlockNextLevel(levelId: string) {
-    const level = await this.levelRepo.findById({ id: levelId });
-    if (!level) return;
-
-    // Next still-locked level (insert-order approximation via _id)
-    const nextLevels = await this.levelRepo.find(
-      { isLocked: true, _id: { $gt: (level as any)._id } },
-      {},
-      { sort: { _id: 1 }, limit: 1 } as any,
-    );
-
-    const nextLevel = nextLevels[0];
-    if (!nextLevel) return;
-
-    await this.levelRepo.findByIdAndUpdate({
-      id: (nextLevel as any)._id,
-      update: { isLocked: false },
-    });
-
-    // Unlock the first mandatory course of that level
-    const firstCourse = await this.courseRepo.findOne({
-      filter: { level: (nextLevel as any)._id, type: CourseType.MANDATORY },
-      options: { sort: { order: 1 } } as any,
-    });
-    if (firstCourse) {
-      await this.courseRepo.findByIdAndUpdate({
-        id: (firstCourse as any)._id,
-        update: { isLocked: false },
-      });
-      // Unlock its first lesson
-      const firstLesson = await this.lessonRepo.findOne({
-        filter: { course: (firstCourse as any)._id },
-        options: { sort: { order: 1 } } as any,
-      });
-      if (firstLesson) {
-        await this.lessonRepo.findByIdAndUpdate({
-          id: (firstLesson as any)._id,
-          update: { isLocked: false },
-        });
-      }
+        id: nextLesson.id,
+        update: { isLocked: false }
+      })
     }
   }
+
+  // 8. if failed → subtract xp
+  if (!passed && xpLost > 0) {
+    await this.userRepo.findByIdAndUpdate({
+      id: userId,
+      update: { $inc: { score: -xpLost } }
+    })
+  }
+
+  return {
+    passed,
+    score,
+    correctCount,
+    totalQuestions: quiz.questions.length,
+    xpEarned,
+    xpLost,
+  }
+}
+
+async getQuizAnswers(quizId: string, userId: string) {
+  // 1. check quiz exists
+  const quiz = await this.quizRepo.findById({ id: quizId })
+  if (!quiz) {
+    throw new NotFoundException('Quiz not found')
+  }
+
+  // 2. find submitted attempt
+  const attempt = await this.quizAttemptRepo.findOne({
+    filter: { userId, quizId, status: 'submitted' }
+  })
+  if (!attempt) {
+    throw new NotFoundException('No passed attempt found for this quiz')
+  }
+
+  // 3. merge questions with user answers
+  const questionsWithAnswers = quiz.questions.map((q, index) => ({
+    question: q.question,
+    options: q.options,
+    chosenAnswerIndex: attempt.answers[index],
+    correctAnswerIndex: q.correctAnswerIndex,
+    isCorrect: attempt.answers[index] === q.correctAnswerIndex
+  }))
+
+  return {
+    score: attempt.score,
+    correctCount: attempt.correctCount,
+    totalQuestions: quiz.questions.length,
+    timeTaken: attempt.timeTaken,
+    xpEarned: attempt.xpEarned,
+    questionsWithAnswers
+  }
+}
 }

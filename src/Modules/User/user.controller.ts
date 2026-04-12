@@ -1,7 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, SetMetadata, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import { UserService } from "./user.service";
-import  type { Request } from "express";
-import { Auth, AuthGuard, RoleGuard, Roles  } from "src/common";
+import { AuthGuard } from "src/common";
 import { changePasswordDto, updateProfileDto } from "./dto";
 import type { AuthReq } from "src/common/AuthReq";
 
@@ -28,7 +27,7 @@ export class UserController {
      return { message: 'Profile updated successfully', data: user }
 }
 
-    @Patch('delete')
+    @Delete('delete')
         async deleteUser(@Req() req: AuthReq) {
         await this.userService.deleteUser(req.user['_id'])
         return { message: 'User deleted successfully' }

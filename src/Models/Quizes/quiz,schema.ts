@@ -2,12 +2,14 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose from "mongoose";
 
 @Schema({ timestamps: true })
-export class Quiz {
+export class Quiz {//exam paper template
+
+  @Prop({ type: String, required: true })
+  title: string;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true })
   courseId: mongoose.Schema.Types.ObjectId;
 
-  //null if final quiz
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Lesson', default: null })
   lessonId: mongoose.Schema.Types.ObjectId;
 
@@ -26,19 +28,15 @@ export class Quiz {
   @Prop({ type: Number, default: 0 })
   timeLimit: number;
 
-  @Prop({ type: String, default: null })
-  title: string; // only for final quiz
-
   @Prop({
     type: [{
       question:      { type: String, required: true },
       options:       { type: [String], required: true },
-      correctAnswer: { type: String, required: true },
+      correctAnswerIndex: { type: Number, required: true },
     }],
     default: []
   })
-  questions: { question: string; options: string[]; correctAnswer: string }[];
-
+  questions: { question: string; options: string[]; correctAnswerIndex: number }[];
 }
 
 export const QuizSchema = SchemaFactory.createForClass(Quiz);

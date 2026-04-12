@@ -1,75 +1,64 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Post,
-  Query,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import { QuizService } from './quiz.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { SubmitQuizDto } from './dto/submit-quiz.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
-import { UserRoles } from 'src/common/enums/RolesEnum';
-import { AuthGuard } from 'src/common/guards/auth.guard';
-import type { AuthReq } from 'src/common/AuthReq';
+import type { AuthReq } from '../../common/AuthReq';
+import { UpdateQuizDto } from './dto/update-quiz.dto';
 
 @Controller('quiz')
 export class QuizController {
-  constructor(private readonly quizService: QuizService) {}
+  constructor(private readonly quizService: QuizService) { }
 
-  /** GET /quiz?lesson=<lessonId>  → view quizzes for a lesson */
-  @UseGuards(AuthGuard)
-  @Get()
-  getQuizzesByLesson(@Query('lesson') lessonId: string) {
-    return this.quizService.getQuizzesByLesson(lessonId);
+  @Auth('Admin')
+  @Post('create')
+  async createQuiz(@Body() createQuizDto: CreateQuizDto) {
+    const quiz = await this.quizService.createQuiz(createQuizDto)
+    return { message: 'Quiz created successfully', data: quiz }
   }
 
-  /**
-   * POST /quiz  → admin only
-   * Creates a quiz definition (questions + correct answers) for a lesson.
-   */
-  @Auth(UserRoles.Admin)
-  @Post()
-  createQuiz(@Body() dto: CreateQuizDto) {
-    return this.quizService.createQuiz(dto);
+  @Auth('Admin')
+  @Patch('update/:id')
+  async updateQuiz(@Param('id') quizId: string, @Body() updateQuizDto: UpdateQuizDto) {
+    const quiz = await this.quizService.updateQuiz(quizId, updateQuizDto)
+    return { message: 'Quiz updated successfully', data: quiz }
   }
 
-  /**
-   * POST /quiz/:lessonId/start?difficulty=easy
-   * User starts a fresh quiz attempt for a lesson.
-   */
-  @UseGuards(AuthGuard)
-  @Post(':lessonId/start')
-  startQuiz(
-    @Param('lessonId') lessonId: string,
-    @Query('difficulty') difficulty: string,
-    @Req() req: AuthReq,
-  ) {
-    return this.quizService.startQuiz(
-      (req.user as any)._id.toString(),
-      lessonId,
-      difficulty || 'easy',
-    );
+  @Auth('Admin')
+  @Delete('delete/:id')
+  async deleteQuiz(@Param('id') quizId: string) {
+    await this.quizService.deleteQuiz(quizId)
+    return { message: 'Quiz deleted successfully' }
   }
 
-  /**
-   * POST /quiz/:lessonId/submit
-   * User submits answers; score is calculated and next item unlocked if passed.
-   */
-  @UseGuards(AuthGuard)
-  @Post(':lessonId/submit')
-  submitQuiz(
-    @Param('lessonId') lessonId: string,
-    @Body() dto: SubmitQuizDto,
-    @Req() req: AuthReq,
-  ) {
-    return this.quizService.submitQuiz(
-      (req.user as any)._id.toString(),
-      lessonId,
-      dto,
-    );
+  @Auth('Student')
+  @Get('start/:id')
+  async startQuiz(@Param('id') quizId: string, @Req() req: AuthReq) {
+    const result = await this.quizService.startQuiz(quizId, req.user.id)
+    return { message: 'Quiz started successfully', data: result }
   }
+
+  @Auth('Student')
+  @Post('submit')
+  async submitQuiz(@Body() submitQuizDto: SubmitQuizDto, @Req() req: AuthReq) {
+    const result = await this.quizService.submitQuiz(submitQuizDto, req.user.id)
+    return { message: 'Quiz submitted successfully', data: result }
+  }
+
+  @Auth('Student')
+  @Get('results/:quizId')
+  async getQuizResults(@Param('quizId') quizId: string, @Req() req: AuthReq) {
+    const result = await this.quizService.getQuizAnswers(quizId, req.user.id)
+    return { message: 'Quiz results retrieved successfully', data: result }
+  }
+
 }

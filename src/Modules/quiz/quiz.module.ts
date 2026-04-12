@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { QuizController } from './quiz.controller';
 import { QuizService } from './quiz.service';
-import { QuizAttempt, QuizAttemptSchema } from 'src/Models/Quizes/quizAttempt';
+import { Quiz, QuizSchema } from 'src/Models/Quizes/quiz,schema';
 import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
+import { QuizAttempt, QuizAttemptSchema } from 'src/Models/Quizes/quizAttempt.schema';
+import { QuizAttemptRepo } from 'src/Models/Quizes/quizAttempt.repo';
 import { Lesson, LessonSchema } from 'src/Models/Lessons/lesson.schem';
 import { LessonRepo } from 'src/Models/Lessons/lesson.repo';
 import { Course, CourseSchema } from 'src/Models/Cousrses/course.schema';
@@ -18,6 +20,7 @@ import { Reflector } from '@nestjs/core';
 @Module({
   imports: [
     MongooseModule.forFeature([
+      { name: Quiz.name, schema: QuizSchema },
       { name: QuizAttempt.name, schema: QuizAttemptSchema },
       { name: Lesson.name, schema: LessonSchema },
       { name: Course.name, schema: CourseSchema },
@@ -29,6 +32,7 @@ import { Reflector } from '@nestjs/core';
   providers: [
     QuizService,
     QuizRepo,
+    QuizAttemptRepo,
     LessonRepo,
     CourseRepo,
     LevelRepo,
@@ -36,6 +40,6 @@ import { Reflector } from '@nestjs/core';
     TokenService,
     Reflector,
   ],
-  exports: [QuizService, QuizRepo],
+  exports: [QuizService, QuizRepo, QuizAttemptRepo],
 })
 export class QuizModule { }

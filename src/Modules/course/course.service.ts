@@ -81,7 +81,7 @@ export class CourseService {
     });
   }
 
-  const enrollment = await this.enrollmentRepo.findOne({ filter: { user: userId } });
+  const enrollment = await this.enrollmentRepo.findOne({ filter: {userId } });
   if (!enrollment) throw new NotFoundException('Enrollment record not found');
 
   const completedIds = enrollment.completedCourses.map((id) => id.toString());
@@ -101,7 +101,7 @@ export class CourseService {
   }
 
   return this.enrollmentRepo.findOneAndUpdate({
-    filter: { user: userId },
+    filter: { userId },
     update: { $push: { enrolledCourses: courseId } },
     options: { new: true },
   });

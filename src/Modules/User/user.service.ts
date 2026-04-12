@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, UseGuards } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException, UseGuards } from "@nestjs/common";
 import { UserRepo } from "src/Models/User/user.repo";
 import { changePasswordDto, updateProfileDto } from "./dto";
 import { compare, Hash } from "src/common";
@@ -72,7 +72,7 @@ export class UserService {
 
   const isMatch = await compare(oldPassword, user.password)
   if (!isMatch) {
-    throw new BadRequestException('Invalid credentials')
+    throw new UnauthorizedException('Invalid credentials')
   }
 
   const isSamePassword = await compare(newPassword, user.password)
@@ -183,12 +183,15 @@ async acceptFriendRequest(user: any, fromId: string) {
   async getFriends(userId: string) {
   const me = await this.userRepo.findById({
     id: userId,
+    options: { 
+      populate: { 
+        path: 'friends', 
+        select: 'fullname profilePicture score' 
+      } 
+  }
   })
 
-  if (!me) {
-    throw new NotFoundException('User not found')
-  }
-
-  return me.friends
+  return me
 }
+
 }

@@ -11,9 +11,13 @@ import { Admin, AdminSchema } from './Models/Admin/admin.sachema';
 import { CourseModule } from './Modules/course/course.module';
 import { LessonModule } from './Modules/lesson/lesson.module';
 import { QuizModule } from './Modules/quiz/quiz.module';
+import { ContestModule } from './Modules/contest/contest.module';
+import { ScheduleModule } from '@nestjs/schedule';
+
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),//for scheduling cron jobs
     ConfigModule.forRoot({
           load: [devConfig],
           isGlobal:true
@@ -41,6 +45,7 @@ import { QuizModule } from './Modules/quiz/quiz.module';
      CourseModule,
      LessonModule,
      QuizModule,
+     ContestModule,
     ],
   controllers: [AppController],
   providers: [AppService],

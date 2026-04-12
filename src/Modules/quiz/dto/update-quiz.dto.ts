@@ -12,7 +12,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class QuestionDto {
+class UpdateQuestionDto {
   @IsString()
   @IsNotEmpty()
   question: string;
@@ -24,30 +24,20 @@ class QuestionDto {
 
   @IsNumber()
   @Min(0)
-  correctAnswerIndex: number; // index into options[]
+  correctAnswerIndex: number;
 }
 
-export class CreateQuizDto {
-
-  @IsString()
-  @IsNotEmpty()
-  title: string;
-
-  @IsMongoId()
-  courseId: string;
+export class UpdateQuizDto {
+  @IsOptional()
+  @IsEnum(['easy', 'medium', 'hard'])
+  difficulty?: 'easy' | 'medium' | 'hard';
 
   @IsOptional()
-  @IsMongoId()
-  lessonId?: string; // omit for a final-course quiz
-
-  @IsEnum(['easy', 'medium', 'hard'])
-  difficulty: 'easy' | 'medium' | 'hard';
-
   @IsArray()
   @ValidateNested({ each: true })
   @ArrayMinSize(1)
-  @Type(() => QuestionDto)
-  questions: QuestionDto[];
+  @Type(() => UpdateQuestionDto)
+  questions?: UpdateQuestionDto[];
 
   @IsOptional()
   @IsNumber()
@@ -57,7 +47,7 @@ export class CreateQuizDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  passingScore?: number; // default 70 in schema
+  passingScore?: number;
 
   @IsOptional()
   @IsNumber()
@@ -67,6 +57,5 @@ export class CreateQuizDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  timeLimit?: number; // in seconds, 0 = no limit
-
+  timeLimit?: number;
 }

@@ -37,8 +37,8 @@ export class User  {
   @Prop({ type: String, default: null })
   googleId: string;
 
-  @Prop({ type: String, default:0})
-  level: string;
+  @Prop({ type: Number, default:0})
+  level: number;
 
   @Prop({ type: Number, default: 0 })
   score: number;
@@ -68,12 +68,6 @@ friends: mongoose.Schema.Types.ObjectId[]
 
   @Prop({ type: Boolean, default: false })
   isVerified: boolean;
-
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: Contest.name }], default: [] })
-  enrollmentContests: mongoose.Schema.Types.ObjectId[];
-
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: Enrollment.name }], default: [] })
-  enrollmentCourses: mongoose.Schema.Types.ObjectId[];
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: Badge.name }], default: [] })
   earnedBadges: mongoose.Schema.Types.ObjectId[];
