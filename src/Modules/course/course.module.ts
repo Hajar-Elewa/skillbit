@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { CourseController, EnrollController } from './course.controller';
+import { CourseController } from './course.controller';
 import { CourseService } from './course.service';
 import { Course, CourseSchema } from 'src/Models/Cousrses/course.schema';
 import { CourseRepo } from 'src/Models/Cousrses/course.repo';
@@ -25,7 +25,7 @@ import { Reflector } from '@nestjs/core';
       { name: User.name,        schema: UserSchema },
     ]),
   ],
-  controllers: [CourseController, EnrollController],
+  controllers: [CourseController],
   providers: [
     CourseService,
     CourseRepo,
