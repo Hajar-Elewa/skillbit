@@ -53,52 +53,52 @@ constructor(
 }
 }
 
-    async googleLogin(googleLoginDto:googleLoginDto) {
-       //get data from request
-       const {idToken} =googleLoginDto
+//     async googleLogin(googleLoginDto:googleLoginDto) {
+//        //get data from request
+//        const {idToken} =googleLoginDto
 
-       //verify the token with google
-       const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
-       const ticket = await client.verifyIdToken({
-        idToken,
-        audience: process.env.GOOGLE_CLIENT_ID  // to ensure the token is meant for our app only and not some other app that also uses google login
-       })
-        const payload = ticket.getPayload()
-        if(!payload) {
-            throw new UnauthorizedException('Invalid Google token')
-        }
+//        //verify the token with google
+//        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+//        const ticket = await client.verifyIdToken({
+//         idToken,
+//         audience: process.env.GOOGLE_CLIENT_ID  // to ensure the token is meant for our app only and not some other app that also uses google login
+//        })
+//         const payload = ticket.getPayload()
+//         if(!payload) {
+//             throw new UnauthorizedException('Invalid Google token')
+//         }
 
-        //check if user already exists in our database
-        let user = await this.userRepo.findByEmail(payload.email??'') // if payload.email is undefined use empty string to avoid error in findByEmail
+//         //check if user already exists in our database
+//         const user = await this.userRepo.findByEmail(payload.email??'') // if payload.email is undefined use empty string to avoid error in findByEmail
 
-        if(!user) {
-            //if not exist create new user with data from google and mark email as verified since google already verified it
-           const createdUser = await this.userRepo.create({
-                fullname: payload.name,
-                email: payload.email,
-                googleId: payload.sub,
-                isVerified: true, // since google already verified the email
-                role: 'user', // default role for google signups
-                isFirstTime: true, // can be used to show onboarding or not
-                  userAgent: 'google', // to know that this user signed up with google and not local to avoid password requirement in user schema.
-            })
-        }
+//         if(!user) {
+//             //if not exist create new user with data from google and mark email as verified since google already verified it
+//            const createdUser = await this.userRepo.create({
+//                 fullname: payload.name,
+//                 email: payload.email,
+//                 googleId: payload.sub,
+//                 isVerified: true, // since google already verified the email
+//                 role: 'user', // default role for google signups
+//                 isFirstTime: true, // can be used to show onboarding or not
+//                   userAgent: 'google', // to know that this user signed up with google and not local to avoid password requirement in user schema.
+//             })
+//         }
 
-        //generate accessToken and refreshToken for the user
-        const accessToken = this.tokenService.sign(
-            { _id: createdUser['_id'], email: user.email },
-            { secret: process.env.JWT_SECRET, expiresIn: '3h' }
-        ) 
-        const refreshToken = this.tokenService.sign(
-            { _id: createdUser['_id'], email: user.email },
-            { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '4d' }
-        )
+//         //generate accessToken and refreshToken for the user
+//         const accessToken = this.tokenService.sign(
+//             { _id: user['_id'], email: user.email },
+//             { secret: process.env.JWT_SECRET, expiresIn: '3h' }
+//         ) 
+//         const refreshToken = this.tokenService.sign(
+//             { _id: user['_id'], email: user.email },
+//             { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '4d' }
+//         )
         
-        return {
-            accessToken,
-            refreshToken,
-        }
-} 
+//         return {
+//             accessToken,
+//             refreshToken,
+//         }
+// } 
 
     async confirmEmail(email:string,otp:string) {
         const user = await this.userRepo.findByEmail(email)

@@ -18,12 +18,12 @@ import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports: [
     ScheduleModule.forRoot(),//for scheduling cron jobs
-    ConfigModule.forRoot({
+    ConfigModule.forRoot({//for loading environment variables
           load: [devConfig],
           isGlobal:true
     }),
     MongooseModule.forRootAsync({
-      inject: [devConfig],
+      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get('DATABASE_URL'),
       }),

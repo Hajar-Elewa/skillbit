@@ -18,7 +18,7 @@ import { MongooseModule } from "@nestjs/mongoose";
         }]),
     ],
     controllers: [AuthController],
-    providers: [AuthService,UserRepo,TokenService,JwtService]
+    providers: [AuthService,UserRepo,JwtService,TokenService,JwtService]
 })
 
 export class AuthModule {}

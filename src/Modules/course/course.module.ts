@@ -14,6 +14,7 @@ import { User, UserSchema } from 'src/Models/User/user.schema';
 import { UserRepo } from 'src/Models/User/user.repo';
 import { TokenService } from 'src/common/services/token.service';
 import { Reflector } from '@nestjs/core';
+import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { Reflector } from '@nestjs/core';
     UserRepo,
     TokenService,
     Reflector,
+    
   ],
   exports: [CourseService, CourseRepo],
 })

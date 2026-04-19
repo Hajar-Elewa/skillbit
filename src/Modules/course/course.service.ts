@@ -21,7 +21,7 @@ export class CourseService {
     private readonly enrollmentRepo: EnrollmentRepo,
     private readonly quizRepo: QuizRepo,
   ) {}
-
+  
 // TODO: addCourseToFav
 // TODO: removeCourseFromFav
 // TODO: getFavCourses
