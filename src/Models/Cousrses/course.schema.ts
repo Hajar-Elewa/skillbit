@@ -16,8 +16,8 @@ export class Course {
   @Prop({ type: String, required: true })
   description: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Level' })
-  level: Types.ObjectId;
+  @Prop({ type: Number, required: true, ref: 'Level' })
+  level: number;
 
   @Prop({ type: Number, default: 0 })
   order: number;                  //order inside the level (1, 2, 3...)
@@ -34,14 +34,15 @@ export class Course {
   @Prop({ type: Boolean, default: true })
   isLocked: boolean;              //optional courses will always be false
 
+   @Prop({ type: Number, default: 70, min: 0, max: 100 })
+   passScore: number;            // min quiz % score to unlock the NEXT mandatory course
+
   @Prop({ type: Number, default: 0 })
   averageRating: number;
   
   @Prop({ type: Number, default: 0 })
   totalFavorites: number;
-
-  @Prop({ type: Number, default: 70, min: 0, max: 100 })
-  passScore: number;            // min quiz % score to unlock the NEXT mandatory course
+ 
 }
 
 export const CourseSchema = SchemaFactory.createForClass(Course);

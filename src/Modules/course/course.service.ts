@@ -28,22 +28,28 @@ export class CourseService {
 // TODO :addRate
 // TODO: بعد م يخلص الكورس همسح الانرولمينت بتاعه عشان المساحة
   
-  
- async getCoursesByLevel(levelId: string) {
-    return this.courseRepo.find( { level:levelId },{},{sort: { order: 1 } });
-  }
- 
   async createCourse(dto: CreateCourseDto) {
-    const level = await this.levelRepo.findById({ id: dto.level });
+    //check if level exists
+    const level = await this.levelRepo.findOne({filter: {order: dto.level}});
     if (!level) throw new NotFoundException('Level not found');
 
-    const course = await this.courseRepo.findOne({filter:{$and: [{level: dto.level, title: dto.title}]}}) 
-    if (course) throw new BadRequestException('Course already exists');
+    //check if there is a course with same order 
+    const courseByOrder = await this.courseRepo.findOne({filter:{$and: [{level: dto.level, order: dto.order}]}}) 
+    if (courseByOrder) throw new BadRequestException('There is a course with this order number');
 
+    //check if there is a course with same title
+    const courseByTitle = await this.courseRepo.findOne({filter:{$and: [{level: dto.level, title: dto.title}]}}) 
+    if (courseByTitle) throw new BadRequestException('There is a course with this title');
+
+    //check if the course is mandatory and if its order is not 1 then it should be locked
     if(dto.order === 1 || dto.type === CourseType.OPTIONAL) dto.isLocked = false;    
     else dto.isLocked = true;
      
     return this.courseRepo.create(dto);
+  }
+
+ async getCoursesByLevel(levelId: number) {
+    return this.courseRepo.find( { level:levelId },{},{sort: { order: 1 } });
   }
 
   async updateCourse(courseId: string, dto: UpdateCourseDto) {

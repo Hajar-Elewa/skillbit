@@ -3,6 +3,9 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 @Schema()
 export class Level {
 
+    @Prop({ type: Number, required: true, trim: true })
+    order: number;
+
     @Prop({ type: String, required: true, trim: true })
     title: string;
 
@@ -12,8 +15,6 @@ export class Level {
     @Prop({ type: Number, default: 0 })
     earnScore: number;
 
-    @Prop({type : Boolean , default:true  })
-    isLocked:boolean
 }
 
 export const LevelSchema = SchemaFactory.createForClass(Level)

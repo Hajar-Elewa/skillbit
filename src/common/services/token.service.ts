@@ -17,6 +17,7 @@ export class TokenService {
 
   verify({ token, options }: { token: string; options: JwtVerifyOptions }) {
     const result = this.jwtService.verify(token, options)
+    console.log(result)
     return result
   }
 }

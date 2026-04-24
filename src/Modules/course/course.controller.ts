@@ -23,19 +23,21 @@ import type { AuthReq } from 'src/common/AuthReq';
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
-  @UseGuards(AuthGuard)
-  @Get()
-  async getCoursesByLevel(@Query('level') levelId: string) {
-    const courses =await this.courseService.getCoursesByLevel(levelId);
-    return {message: "Courses fetched successfully", courses}
-  }
-
-  @Auth(UserRoles.Admin)
-  @Post()
+   @Auth(UserRoles.Admin)
+   @Post()
   async createCourse(@Body() dto: CreateCourseDto) {
     const course =await this.courseService.createCourse(dto);
     return {message: "Course created successfully", course}
   }
+
+  @UseGuards(AuthGuard)
+  @Get()
+  async getCoursesByLevel(@Query('level') levelId: string) {
+    const courses =await this.courseService.getCoursesByLevel(parseInt(levelId));
+    return {message: "Courses fetched successfully", courses}
+  }
+
+ 
 
   @Auth(UserRoles.Admin)
   @Patch(':id')

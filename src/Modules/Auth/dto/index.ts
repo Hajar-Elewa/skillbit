@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, IsNotEmpty, IsString, IsStrongPassword, MinLength } from "class-validator";
+import {IsBoolean, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, IsStrongPassword, MinLength } from "class-validator";
 import { UserLevels, UserRoles } from "src/common";
 
 
@@ -26,11 +26,13 @@ export class signUpDto {
     role:string;
 
     @IsString()
+    @IsOptional()
     @IsIn(Object.values(UserLevels)) // Ensure level is one of the allowed values
-    level:string;
+    level?:string;
      
-     @IsNotEmpty()
-    isFirstTime:boolean;
+    @IsOptional()
+    @IsBoolean()
+    isFirstTime?:boolean;
 
 }
 
@@ -52,7 +54,6 @@ export class googleSignUpDto {
     @IsString()
     @IsNotEmpty()
     googleId:string;
-
 
     @IsString()
     @IsIn(Object.values(UserRoles)) // Ensure role is one of the allowed values

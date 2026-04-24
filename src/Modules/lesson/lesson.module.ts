@@ -12,6 +12,9 @@ import { TokenService } from 'src/common/services/token.service';
 import { Reflector } from '@nestjs/core';
 import { Quiz, QuizSchema } from 'src/Models/Quizes/quiz,schema';
 import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
+import { JwtService } from '@nestjs/jwt';
+import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
+import { Enrollment, EnrollmentSchema } from 'src/Models/Enrollments/enrollment.schema';
 
 @Module({
   imports: [
@@ -20,10 +23,11 @@ import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
       { name: Course.name, schema: CourseSchema },
       { name: User.name,   schema: UserSchema },
       { name: Quiz.name,   schema: QuizSchema },
+      { name: Enrollment.name, schema: EnrollmentSchema },
     ]),
   ],
   controllers: [LessonController],
-  providers: [LessonService, LessonRepo, CourseRepo, UserRepo, TokenService, Reflector, QuizRepo],
+  providers: [LessonService, LessonRepo, CourseRepo, UserRepo, TokenService, Reflector, QuizRepo,JwtService,EnrollmentRepo],
   exports: [LessonService, LessonRepo],
 })
 export class LessonModule {}

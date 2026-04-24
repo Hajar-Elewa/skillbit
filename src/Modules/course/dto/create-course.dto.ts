@@ -1,6 +1,7 @@
 import {IsString, IsNotEmpty, IsNumber, IsBoolean, IsMongoId, IsOptional, Min, Max, IsEnum} from 'class-validator';
 import { CourseType } from 'src/Models/Cousrses/course.schema';
 
+
 export class CreateCourseDto {
 
   @IsString()
@@ -11,34 +12,29 @@ export class CreateCourseDto {
   @IsNotEmpty()
   description: string;
 
-  @IsMongoId()
-  level: string;
+  @IsNumber()
+  @Min(1)
+  level: number;
 
   @IsNumber()
-  @IsOptional()
-  @Min(0)
-  order?: number;
+  @Min(1)
+  order: number;
 
   @IsEnum(CourseType)
-  @IsOptional()
-  type?: CourseType;
+  type: CourseType;
 
   @IsBoolean()
-  @IsOptional()
-  isLocked?: boolean;
+  isLocked: boolean;
 
   @IsBoolean()
-  @IsOptional()
-  isTutorial?: boolean;
+  isTutorial: boolean;
 
   @IsNumber()
-  @IsOptional()
   @Min(0)
-  earnScore?: number;
+  earnScore: number;
 
   @IsNumber()
-  @IsOptional()
   @Min(0)
   @Max(100)
-  passScore?: number;           // defaults to 70 in schema
+  passScore: number;           // defaults to 70 in schema
 }

@@ -19,9 +19,9 @@ export class AuthGuard implements CanActivate {
         throw new BadRequestException('in-valid token')
       }
       
-      const token = auth.split(' ')[1]
+      const token = auth?.split(' ')[1]
       const payload = this.jwtService.verify({
-        token,
+        token:token as string,
         options: {
           secret: process.env.JWT_SECRET
         }

@@ -13,7 +13,7 @@ import { LessonModule } from './Modules/lesson/lesson.module';
 import { QuizModule } from './Modules/quiz/quiz.module';
 import { ContestModule } from './Modules/contest/contest.module';
 import { ScheduleModule } from '@nestjs/schedule';
-
+import { LevelModule } from './Modules/level/level.module';
 
 @Module({
   imports: [
@@ -34,7 +34,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     schema: UserSchema,
     discriminators: [
       {
-        name: Admin.name,
+        name: "admin",
         schema: AdminSchema,
       }
     ],
@@ -46,6 +46,7 @@ import { ScheduleModule } from '@nestjs/schedule';
      LessonModule,
      QuizModule,
      ContestModule,
+     LevelModule
     ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,8 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException, Req, UnauthorizedException } from "@nestjs/common";
 import { compare, generateOTP, Hash, sendEmail, TokenService } from 'src/common';
 import { UserRepo } from "src/Models/User/user.repo";
 import { googleLoginDto, loginDto, signUpDto } from "./dto";
 import { OAuth2Client } from "google-auth-library";
+
 
 @Injectable()
 export class AuthService {
@@ -13,9 +14,8 @@ constructor(
 ) {}
 
 //with google and github we will skip email verification and directly set isVerified to true
-    async signUp( signUpDto:signUpDto) {
-     const {fullname,email,password,role,level,isFirstTime} = signUpDto
-     const user = await this.userRepo.findByEmail(email)
+  async signUp( dto:signUpDto) {
+     const user = await this.userRepo.findByEmail(dto.email)
       if(user) {
             throw new ConflictException('User already exists')
         } 
@@ -23,23 +23,22 @@ constructor(
         const otp = generateOTP(6)
 
        const emailSent = await sendEmail({
-          to: email,
+          to: dto.email,
           from: process.env.EMAIL,
           subject: 'confirmation email',
-          html: `<h1>Welcome ${fullname}</h1><p>Please confirm your email using this OTP: ${otp}</p>`
+          html: `<h1>Welcome ${dto.fullname}</h1><p>Please confirm your email using this OTP: ${otp}</p>`
         })
-
           if (!emailSent) {
             throw new InternalServerErrorException('Failed to send email, please try again')
         }
     
         const createdUser = await this.userRepo.create({
-            fullname,
-            email,
-            password: await Hash(password),
-            role,
-            level,
-            isFirstTime,
+            fullname:dto.fullname,
+            email:dto.email,
+            password: await Hash(dto.password),
+            role:dto.role,
+            level:dto.level,
+            isFirstTime:dto.isFirstTime,
             emailOtp: {
                 code: otp,
                 expiresAt: new Date(Date.now() + 10 * 60 * 1000) // OTP expires in 10 minutes
@@ -53,95 +52,71 @@ constructor(
 }
 }
 
-//     async googleLogin(googleLoginDto:googleLoginDto) {
-//        //get data from request
-//        const {idToken} =googleLoginDto
+  async googleLogin(googleLoginDto:googleLoginDto) {
+       //get data from request
+       const {idToken} =googleLoginDto
 
-//        //verify the token with google
-//        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
-//        const ticket = await client.verifyIdToken({
-//         idToken,
-//         audience: process.env.GOOGLE_CLIENT_ID  // to ensure the token is meant for our app only and not some other app that also uses google login
-//        })
-//         const payload = ticket.getPayload()
-//         if(!payload) {
-//             throw new UnauthorizedException('Invalid Google token')
-//         }
+       //verify the token with google
+       const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+        const ticket = await client.verifyIdToken({
+         idToken,
+         audience: process.env.GOOGLE_CLIENT_ID  // to ensure the token is meant for our app only and not some other app that also uses google login
+        })
 
-//         //check if user already exists in our database
-//         const user = await this.userRepo.findByEmail(payload.email??'') // if payload.email is undefined use empty string to avoid error in findByEmail
+        const payload = ticket.getPayload()
 
-//         if(!user) {
-//             //if not exist create new user with data from google and mark email as verified since google already verified it
-//            const createdUser = await this.userRepo.create({
-//                 fullname: payload.name,
-//                 email: payload.email,
-//                 googleId: payload.sub,
-//                 isVerified: true, // since google already verified the email
-//                 role: 'user', // default role for google signups
-//                 isFirstTime: true, // can be used to show onboarding or not
-//                   userAgent: 'google', // to know that this user signed up with google and not local to avoid password requirement in user schema.
-//             })
-//         }
+        if(!payload) {
+            throw new UnauthorizedException('Invalid Google token')
+        }
 
-//         //generate accessToken and refreshToken for the user
-//         const accessToken = this.tokenService.sign(
-//             { _id: user['_id'], email: user.email },
-//             { secret: process.env.JWT_SECRET, expiresIn: '3h' }
-//         ) 
-//         const refreshToken = this.tokenService.sign(
-//             { _id: user['_id'], email: user.email },
-//             { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '4d' }
-//         )
-        
-//         return {
-//             accessToken,
-//             refreshToken,
-//         }
-// } 
-
-    async confirmEmail(email:string,otp:string) {
-        const user = await this.userRepo.findByEmail(email)
-
+        //check if user already exists in our database
+        const user = await this.userRepo.findByEmail(payload.email??'') // if payload.email is undefined use empty string to avoid error in findByEmail
         if(!user) {
-            throw new NotFoundException('User not found')
+          //SignUp with google data 
+            //if not exist create new user with data from google and mark email as verified since google already verified it
+           const createdUser = await this.userRepo.create({
+                 fullname: payload.name,
+                 email: payload.email,
+                 googleId: payload.sub,
+                 isVerified: true, // since google already verified the email
+                 role: 'user', // default role for google signups
+                 isFirstTime: true, // can be used to show onboarding or not
+                 userAgent: 'google', // to know that this user signed up with google and not local to avoid password requirement in user schema.
+             })
         }
 
-        if(!user.emailOtp || user.emailOtp.expiresAt < new Date() || user.emailOtp.code !== otp) { 
-            throw new BadRequestException('OTP expired, request a new one')
+        //generate accessToken and refreshToken for the user
+        const accessToken = this.tokenService.sign(
+            { _id: user?.['_id'], email: user?.email },
+            { secret: process.env.JWT_SECRET, expiresIn: '3h' }
+        ) 
+        const refreshToken = this.tokenService.sign(
+            { _id: user?.['_id'], email: user?.email },
+            { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '4d' }
+        )
+        
+        return {
+            accessToken,
+            refreshToken,
         }
+} 
 
-        await this.userRepo.Update({
-          filter: {email},
-          update: { 
-          $unset: { emailOtp: "" },
-         isVerified: true
-       }
-    })
-   
-  return true
-}
+  async login(dto:loginDto) {
+        const user = await this.userRepo.findByEmail(dto.email)
+        if(!user) {
+            throw new UnauthorizedException('Invalid credentials')
+        } 
 
-    async resendOtp(email: string) {
-         const user = await this.userRepo.findByEmail(email)
-             if(!user) {
-               throw new NotFoundException('User not found')
-             }
-
-             if(user.isVerified) {
-                throw new BadRequestException('Email already verified')
-             }
-
+        if(!user.isVerified) {
+          const otp = generateOTP(6)
   
-             const otp = generateOTP(6)
-            
              const emailSent = await sendEmail({
-             to: email,
-            from: process.env.EMAIL,
-            subject: 'New OTP Request',
-            html: `<h1>Hello ${user.fullname}</h1>
-                   <p>Your new OTP is: <strong>${otp}</strong></p>
-                   <p>This OTP will expire in 10 minutes.</p>`
+             to: user.email,
+             from: process.env.EMAIL,
+             subject: 'New OTP Request',
+             html: `<h1>Hello ${user.fullname}</h1>
+             <p>Your new OTP is: <strong>${otp}</strong></p>
+             <p>This OTP will expire in 10 minutes.</p>`
            })
 
           if (!emailSent) {
@@ -149,7 +124,7 @@ constructor(
         }
 
              await this.userRepo.Update({
-                  filter: { email },
+                  filter: { email: user.email },
                   update: {
                     emailOtp: {
                     code: otp,
@@ -157,21 +132,9 @@ constructor(
                 }
     }
   })
-  return true
-}
-
-    async login(loginDto:loginDto) {
-        const {email,password} = loginDto
-        const user = await this.userRepo.findByEmail(email)
-        if(!user) {
-            throw new UnauthorizedException('Invalid credentials')
+            throw new UnauthorizedException('You should confirm your email first, new OTP sent to your email')
         } 
-
-        if(!user.isVerified) {
-          throw new UnauthorizedException('Please confirm your email first')
-        } 
-
-        if(! await compare(password,user.password)) {
+        if(!await compare(dto.password,user.password)) {
             throw new UnauthorizedException('Invalid credentials')
         }
 
@@ -192,38 +155,98 @@ constructor(
             }
 }
 
-   async refreshToken(token: string) {
-  const payload = this.tokenService.verify({
-    token,
-    options: { secret: process.env.JWT_REFRESH_SECRET }
-  })
+  async confirmEmail(email:string,otp:string) {
+        const user = await this.userRepo.findByEmail(email)
+        if(!user) {
+            throw new NotFoundException('User not found')
+        }
 
-  const user = await this.userRepo.findById(payload._id)
-  if (!user) {
-    throw new UnauthorizedException('Invalid token')
-  }
+        if(!user.emailOtp || user.emailOtp.expiresAt < new Date() || user.emailOtp.code !== otp) { 
+            throw new BadRequestException('OTP expired, request a new one')
+        }
 
-  const accessToken = this.tokenService.sign(
-    { _id: user['_id'], email: user.email },
-    { secret: process.env.JWT_SECRET, expiresIn: '3h' }
-  )
-
-  const refreshToken = this.tokenService.sign(
-    { _id: user['_id'], email: user.email },
-    { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '4d' }
-  )
-
-  return { accessToken, refreshToken }
+        await this.userRepo.Update({
+          filter: {email},
+          update: { 
+          $unset: { emailOtp: "" },
+         isVerified: true
+       }
+    })
+   
+  return true
 }
 
-    async forgotPassword(email: string) {
+  async resendOtp(email: string) {
+         const user = await this.userRepo.findByEmail(email)
+             if(!user) {
+               throw new NotFoundException('User not found')
+             }
+
+             if(user.isVerified) {
+                throw new BadRequestException('Email already verified')
+             }
+
+             const otp = generateOTP(6)
+            
+             const emailSent = await sendEmail({
+             to: email,
+             from: process.env.EMAIL,
+             subject: 'New OTP Request',
+             html: `<h1>Hello ${user.fullname}</h1>
+             <p>Your new OTP is: <strong>${otp}</strong></p>
+             <p>This OTP will expire in 10 minutes.</p>`
+           })
+
+          if (!emailSent) {
+            throw new InternalServerErrorException('Failed to send email, please try again')
+        }
+
+             await this.userRepo.Update({
+                  filter: { email },
+                  update: {
+                    emailOtp: {
+                    code: otp,
+                    expiresAt: new Date(Date.now() + 10 * 60 * 1000) // fresh 10 minutes
+             }}
+  })
+  return true
+}
+
+  async refreshToken(token:string) {  
+        const payload = this.tokenService.verify({
+        token,
+        options: { secret: process.env.JWT_REFRESH_SECRET }
+       })
+       const user = await this.userRepo.findById({id:payload._id})
+        if (!user) {
+          throw new UnauthorizedException('Invalid token')
+        }
+
+        const accessToken = this.tokenService.sign(
+           { _id: user['_id'], email: user.email },
+           { secret: process.env.JWT_SECRET, expiresIn: '3h' }
+        )
+
+        const refreshToken = this.tokenService.sign(
+           { _id: user['_id'], email: user.email },
+           { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '4d' }
+        )
+
+        return { accessToken, refreshToken }
+}
+
+  async forgotPassword(email: string) {
        const user = await this.userRepo.findByEmail(email)
         if (!user) {
           throw new NotFoundException('User not found')
         }
 
-        const otp = generateOTP(6)
+      //  if(user.isVerified) {
+      //   throw new BadRequestException('Email is already verified, you can login now')
+      //  } 
 
+        const otp = generateOTP(6)
+        
        const emailSent = await sendEmail({
           to: email,
           from: process.env.EMAIL,
@@ -237,25 +260,24 @@ constructor(
              throw new InternalServerErrorException('Failed to send email, please try again')
           }
 
+        //update user with new otp and set it expires in 10 minutes
        await this.userRepo.Update({
           filter: { email },
           update: {
            emailOtp: {
            code: otp,
            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
-      }
-    }
-  })
+         }}
+    })
 
   return true
 }
 
-    async resetPassword(email: string, otp: string, newPassword: string) {
+  async resetPassword(email: string, otp: string, newPassword: string) {
         const user = await this.userRepo.findByEmail(email) 
         if(!user) {
             throw new NotFoundException('User not found')
         }
-
         if(!user.emailOtp || user.emailOtp.expiresAt < new Date() || user.emailOtp.code !== otp) { 
             throw new BadRequestException('OTP expired, request a new one')
         }
@@ -264,7 +286,6 @@ constructor(
            if(isSamePassword) {
              throw new BadRequestException('New password cannot be same as old password')
          }
-
         await this.userRepo.Update(
             { filter: { email },
             update: {

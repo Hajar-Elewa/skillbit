@@ -14,7 +14,9 @@ import { User, UserSchema } from 'src/Models/User/user.schema';
 import { UserRepo } from 'src/Models/User/user.repo';
 import { TokenService } from 'src/common/services/token.service';
 import { Reflector } from '@nestjs/core';
+import { Quiz, QuizSchema } from 'src/Models/Quizes/quiz,schema';
 import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
       { name: Lesson.name,      schema: LessonSchema },
       { name: Enrollment.name,  schema: EnrollmentSchema },
       { name: User.name,        schema: UserSchema },
+      { name: Quiz.name,        schema: QuizSchema },
+
     ]),
   ],
   controllers: [CourseController],
@@ -36,7 +40,8 @@ import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
     UserRepo,
     TokenService,
     Reflector,
-    
+    QuizRepo,
+    JwtService
   ],
   exports: [CourseService, CourseRepo],
 })
