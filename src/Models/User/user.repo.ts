@@ -10,7 +10,7 @@ export class UserRepo extends DBService<User> {
     super(userModel)//SUPER MEANS CALL THE CONSTRUCTOR OF THE PARENT CLASS DBService
   }
 
-  async findByEmail(email: string) {
+  async findByEmail(email: string) {//to change return type change it in user service too
     return await this.findOne({ filter: { email } })
 }
 }
