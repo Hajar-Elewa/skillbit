@@ -8,7 +8,7 @@ export enum Role {
   ADMIN = 'admin',
 }
 
-@Schema({timestamps:true})
+@Schema({timestamps:true,discriminatorKey})
 export class User  {
 
   @Prop({ type: String, required: true, trim: true })

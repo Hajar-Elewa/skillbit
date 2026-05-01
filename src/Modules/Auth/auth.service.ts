@@ -5,7 +5,6 @@ import { googleLoginDto, loginDto, signUpDto } from "./dto";
 import { OAuth2Client } from "google-auth-library";
 import { User } from "src/Models/User/user.schema";
 
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -57,7 +56,7 @@ export class AuthService {
   async googleLogin(googleLoginDto: googleLoginDto) {
     //get data from request
     const { idToken } = googleLoginDto
-   console.log(idToken)
+
     //verify the token with google
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
     const ticket = await client.verifyIdToken({
