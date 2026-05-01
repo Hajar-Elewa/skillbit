@@ -1,5 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException, UseGuards } from "@nestjs/common";
-import { UserRepo } from "src/Models/User/user.repo";
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { UserRepo } from "src/Models/User/user.repo"; 
 import { changePasswordDto, updateProfileDto } from "./dto";
 import { compare, Hash } from "src/common";
 

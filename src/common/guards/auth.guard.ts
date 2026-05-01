@@ -1,7 +1,6 @@
-import { BadRequestException, CanActivate, ExecutionContext, Injectable} from '@nestjs/common'
+import { BadRequestException, CanActivate, ExecutionContext, Injectable, UnauthorizedException} from '@nestjs/common'
 import { UserRepo } from 'src/Models/User/user.repo'
 import { TokenService } from '../services/token.service'
-import { AuthReq } from '../AuthReq'
 
 
 @Injectable()
@@ -13,19 +12,27 @@ export class AuthGuard implements CanActivate {
 ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> { //ExecutionContext => includes the request and response objects, and other information about the current execution context.[wink]
-      const req = context.switchToHttp().getRequest<AuthReq>() // this line means get the request from the context and cast it to AuthReq type.
+      const req = context.switchToHttp().getRequest() // this line means get the request from the context and cast it to AuthReq type.
       const auth = req.headers.authorization
       if (!auth?.startsWith(process.env.BEARER as string)) {
         throw new BadRequestException('in-valid token')
-      }
-      
-      const token = auth?.split(' ')[1]
-      const payload = this.jwtService.verify({
+      }  
+      let payload: any
+      let token: string 
+     try {
+      token = auth?.split(' ')[1]
+      payload = this.jwtService.verify({
         token:token as string,
         options: {
           secret: process.env.JWT_SECRET
         }
-      })
+      });
+}catch (error) {
+  if (error.name === 'TokenExpiredError') {
+    throw new UnauthorizedException('Token expired');
+  }
+  throw new UnauthorizedException('Invalid token');
+}
 
 const user = await this.userRepo.findById({//here i'm not dealing with  database direct,  i'm dealing with the repo that call the DBService that  deal with the database.'wink'
   id: payload._id

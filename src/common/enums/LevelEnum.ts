@@ -1,5 +1,5 @@
 export enum UserLevels {
-    Beginner = 'beginner',
-    Intermediate = 'intermediate',
-    Advanced = 'advanced',
-  }
+    beginner = 1,
+    Intermediate = 2,
+    Advanced = 3,
+}

@@ -4,24 +4,19 @@ import { LessonRepo } from 'src/Models/Lessons/lesson.repo';
 import { CourseRepo } from 'src/Models/Cousrses/course.repo';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
-import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
 
+//OOP 
+ //=>>
+   //..
+ //=>>
+  //..
+  
 @Injectable()
 export class LessonService {
   constructor(
     private readonly lessonRepo: LessonRepo,
-    private readonly courseRepo: CourseRepo,
-    private readonly quizRepo: QuizRepo
-    
+    private readonly courseRepo: CourseRepo,    
   ) {}
-
-  async getLessonsByCourse(courseId: string) {
-    return this.lessonRepo.find(
-      { course: new Types.ObjectId(courseId) },
-      {},
-      { sort: { order: 1 } },
-    );
-  }
 
   async createLesson(dto: CreateLessonDto) {
   const course = await this.courseRepo.findById({ id: dto.course });
@@ -39,9 +34,42 @@ export class LessonService {
   if (orderTaken)
     throw new BadRequestException(`A lesson with order ${dto.order} already exists in this course`);
 
-  const isLocked = dto.order !== 1;
+  const isLocked = dto.order !== 1; //
   const lesson = await this.lessonRepo.create({ ...dto, isLocked });
+  //add this lesson to course lessons list
+  await this.courseRepo.findByIdAndUpdate({
+    id: dto.course,
+    update: { $push: { lessons: lesson['_id'] } },
+    options: { new: true },
+  });
   return lesson;
+  }
+
+  async bulkCreateLessons(lessons: CreateLessonDto[]) {
+  const preparedLessons = lessons.map(lesson => ({
+    ...lesson,
+    isLocked: lesson.order !== 1
+  }))
+
+  return await this.lessonRepo.insertMany(preparedLessons)
+  }
+  
+   async getLessonsByCourse(courseId: string) {
+    return this.lessonRepo.find(
+      { course: new Types.ObjectId(courseId) },
+      {},
+      { sort: { order: 1 } },
+    );
+   }
+
+  async getLessonWithQuiz(lessonId: string) {
+    const lesson = await this.lessonRepo.findById({ id: lessonId });
+    if (!lesson) throw new NotFoundException('Lesson not found');
+
+     if (lesson.isLocked) {
+      throw new ForbiddenException('You can not access this lesson');
+    }
+    return {lesson};
   }
 
   async updateLesson(lessonId: string, dto: UpdateLessonDto) {
@@ -66,18 +94,4 @@ export class LessonService {
 
   return lesson;
   }
-
-  async getLessonWithQuiz(lessonId: string) {
-    const lesson = await this.lessonRepo.findById({ id: lessonId });
-    if (!lesson) throw new NotFoundException('Lesson not found');
-
-     if (lesson.isLocked) {
-      throw new ForbiddenException('You can not access this lesson');
-    }
-    
-    const quiz = await this.quizRepo.findOne({ filter: { lesson: lessonId } });
-    if (!quiz) throw new NotFoundException('Quiz of the lesson not found');
-
-    return {lesson, quiz};
-  }
-}
+} 

@@ -14,7 +14,7 @@ export class Level {
 
     @Prop({ type: Number, default: 0 })
     earnScore: number;
-
+    
 }
 
 export const LevelSchema = SchemaFactory.createForClass(Level)

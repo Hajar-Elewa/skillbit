@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException, Req, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { compare, generateOTP, Hash, sendEmail, TokenService } from 'src/common';
 import { UserRepo } from "src/Models/User/user.repo";
 import { googleLoginDto, loginDto, signUpDto } from "./dto";
@@ -21,7 +21,7 @@ constructor(
         } 
 
         const otp = generateOTP(6)
-
+      
        const emailSent = await sendEmail({
           to: dto.email,
           from: process.env.EMAIL,
@@ -39,6 +39,7 @@ constructor(
             role:dto.role,
             level:dto.level,
             isFirstTime:dto.isFirstTime,
+            isVerified:false,
             emailOtp: {
                 code: otp,
                 expiresAt: new Date(Date.now() + 10 * 60 * 1000) // OTP expires in 10 minutes
@@ -100,6 +101,7 @@ constructor(
             refreshToken,
         }
 } 
+
 
   async login(dto:loginDto) {
         const user = await this.userRepo.findByEmail(dto.email)
@@ -236,29 +238,25 @@ constructor(
 }
 
   async forgotPassword(email: string) {
-       const user = await this.userRepo.findByEmail(email)
-        if (!user) {
+       const user = await this.userRepo.findByEmail(email) 
+        if (!user) { 
           throw new NotFoundException('User not found')
-        }
-
-      //  if(user.isVerified) {
-      //   throw new BadRequestException('Email is already verified, you can login now')
-      //  } 
-
+        } 
+      
         const otp = generateOTP(6)
         
        const emailSent = await sendEmail({
           to: email,
           from: process.env.EMAIL,
           subject: 'Reset Password',
-          html: `<h1>Hello ${user.fullname}</h1>
+          html: `<h1>Hello ${user.fullname}</h1> 
                  <p>Your reset password OTP is: <strong>${otp}</strong></p>
                  <p>This OTP will expire in 10 minutes.</p>`
-  })
+  }) 
 
           if (!emailSent) {
              throw new InternalServerErrorException('Failed to send email, please try again')
-          }
+          } 
 
         //update user with new otp and set it expires in 10 minutes
        await this.userRepo.Update({
@@ -269,8 +267,8 @@ constructor(
            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
          }}
     })
-
-  return true
+  
+  return true 
 }
 
   async resetPassword(email: string, otp: string, newPassword: string) {

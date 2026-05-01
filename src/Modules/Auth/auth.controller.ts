@@ -18,7 +18,13 @@ export class AuthController {
     async login(@Body() loginDto: loginDto) {
       const { accessToken, refreshToken } = await this.authService.login(loginDto)
       return ({ accessToken ,refreshToken})
-}
+    }
+    
+    @Post('google-login')
+    async googleLogin(@Body() dto:googleLoginDto) {
+        const { accessToken, refreshToken } = await this.authService.googleLogin(dto) 
+         return { accessToken, refreshToken }
+    }
 
     @Post('confirm-email')
     async confirmEmail(@Body() dto:confirmEmailDto) {
@@ -33,12 +39,6 @@ export class AuthController {
         return { message: 'OTP resent successfully, please check your email' }  
     }
 
-    @Post('google-login')
-    async googleLogin(@Body() dto:googleLoginDto) {
-        const { accessToken, refreshToken } = await this.authService.googleLogin(dto) 
-         return { accessToken, refreshToken }
-    }
-
     @Post('refresh')
      async refreshToken(@Headers('authorization') auth:string ) {
         const token = auth?.split(' ')[1]
@@ -50,12 +50,12 @@ export class AuthController {
     async forgotPassword(@Body() body: forgotPasswordDto) {
        await this.authService.forgotPassword(body.email)
        return { message: 'OTP sent to your email' }
-}
+    }
 
     @Post('reset-password')
     async resetPassword(@Body() resetPasswordDto: resetPasswordDto) {
        const { email, otp, newPassword } = resetPasswordDto
          await this.authService.resetPassword(email, otp, newPassword)
          return { message: 'Password reset successfully, you can now login' }
-}
+    }
 }

@@ -7,13 +7,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from './Modules/User/user.module';
 import devConfig from './config/env/dev.config';
 import { User, UserSchema } from './Models/User/user.schema';
-import { Admin, AdminSchema } from './Models/Admin/admin.sachema';
+import { AdminSchema } from './Models/Admin/admin.sachema';
 import { CourseModule } from './Modules/course/course.module';
 import { LessonModule } from './Modules/lesson/lesson.module';
 import { QuizModule } from './Modules/quiz/quiz.module';
 import { ContestModule } from './Modules/contest/contest.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LevelModule } from './Modules/level/level.module';
+import { AchievementModule } from './Modules/achievement/achievement.module';
 
 @Module({
   imports: [
@@ -46,10 +47,10 @@ import { LevelModule } from './Modules/level/level.module';
      LessonModule,
      QuizModule,
      ContestModule,
-     LevelModule
+     LevelModule,
+     AchievementModule
     ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-

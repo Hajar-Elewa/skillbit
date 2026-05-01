@@ -16,6 +16,10 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
    async create( data: any ) : Promise<T> {
     return await this.model.create(data)
   }
+  
+  async insertMany(data: any[]) {
+    return await this.model.insertMany(data)
+  }
 
   async find(
     filter: QueryFilter<T>,

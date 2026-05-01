@@ -1,7 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 
-
-
 @Schema()
 export class Badge  {
 
@@ -16,9 +14,6 @@ export class Badge  {
 
   @Prop({ type: Number, required: true })
    minimumScore: number;
-
-  @Prop({ type: Number, required: true })
-  order: number;
 
 }
 

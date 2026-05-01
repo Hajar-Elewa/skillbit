@@ -10,7 +10,7 @@ export enum CourseType {
 @Schema({ timestamps: true })
 export class Course {
 
-  @Prop({ type: String, required: true, trim: true })
+  @Prop({ type: String, required: true, trim: true })//trim =>to remove spaces from the start and end
   title: string;
 
   @Prop({ type: String, required: true })

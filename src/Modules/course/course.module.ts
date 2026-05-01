@@ -17,6 +17,9 @@ import { Reflector } from '@nestjs/core';
 import { Quiz, QuizSchema } from 'src/Models/Quizes/quiz,schema';
 import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
 import { JwtService } from '@nestjs/jwt';
+import { AchievementService } from '../achievement/achievement.service';
+import { AchievementRepo } from 'src/Models/Achievements/achievement.repo';
+import { Achievement, AchievementSchema } from 'src/Models/Achievements/achievement.schema';
 
 @Module({
   imports: [
@@ -27,6 +30,7 @@ import { JwtService } from '@nestjs/jwt';
       { name: Enrollment.name,  schema: EnrollmentSchema },
       { name: User.name,        schema: UserSchema },
       { name: Quiz.name,        schema: QuizSchema },
+      { name: Achievement.name, schema: AchievementSchema }
 
     ]),
   ],
@@ -41,8 +45,10 @@ import { JwtService } from '@nestjs/jwt';
     TokenService,
     Reflector,
     QuizRepo,
-    JwtService
+    JwtService,
+    AchievementService,
+    AchievementRepo
   ],
-  exports: [CourseService, CourseRepo],
+  exports: [CourseService, CourseRepo,AchievementService],
 })
 export class CourseModule {}

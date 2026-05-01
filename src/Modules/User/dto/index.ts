@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
 export class updateProfileDto {
   @IsOptional()
@@ -8,6 +8,7 @@ export class updateProfileDto {
   @IsOptional()
   @IsString()
   profilePicture?: string
+
 }
 
 export class changePasswordDto {

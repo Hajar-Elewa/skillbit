@@ -7,16 +7,16 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
-import { CreateCourseDto } from './dto/create-course.dto';
+import { CreateBulkCoursesDto, CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
 import { UserRoles } from 'src/common/enums/RolesEnum';
 import { AuthGuard } from 'src/common/guards/auth.guard';
-import type { AuthReq } from 'src/common/AuthReq';
+import { User } from 'src/common/decorators/user.decorator';
+import { CreateBulkLessonsDto } from '../lesson/dto/create-lesson.dto';
 
 
 @Controller('courses')
@@ -28,16 +28,36 @@ export class CourseController {
   async createCourse(@Body() dto: CreateCourseDto) {
     const course =await this.courseService.createCourse(dto);
     return {message: "Course created successfully", course}
-  }
+  } 
+
+  @Auth(UserRoles.Admin)
+  @Post('bulk')
+  async bulkCreateCourses(@Body() dto: CreateBulkCoursesDto) {
+  const courses = await this.courseService.bulkCreateCourses(dto.courses)
+  return { message: 'Courses created successfully', data: courses }
+}
 
   @UseGuards(AuthGuard)
   @Get()
-  async getCoursesByLevel(@Query('level') levelId: string) {
-    const courses =await this.courseService.getCoursesByLevel(parseInt(levelId));
+  async getCoursesByLevel(@Query('level') levelnum: number) {
+    const courses =await this.courseService.getCoursesByLevel(levelnum);
+    console.log(courses)
     return {message: "Courses fetched successfully", courses}
   }
 
- 
+  @UseGuards(AuthGuard)
+  @Get('search')
+  async getCourseByName(@Query('name') name: string) {
+    const courses = await this.courseService.getCourseByName(name);
+    return {message: "Courses fetched successfully", courses}
+  }
+
+  @UseGuards(AuthGuard)
+  @Get(':id')
+  async getCourseById(@Param('id') id: string) {
+    const course = await this.courseService.getCourseById(id);
+    return {message: "Course fetched successfully", course}
+  }
 
   @Auth(UserRoles.Admin)
   @Patch(':id')
@@ -54,16 +74,23 @@ export class CourseController {
   }
 
   @UseGuards(AuthGuard)
-  @Post(':id/enroll')
-  async enrollInCourse(@Req() req: AuthReq, @Param('id') courseId: string) {
-    const course =await this.courseService.enrollInCourse(req.user.id, courseId);
+  @Post('enroll/:courseId')
+  async enrollInCourse(@User('id') userId: string, @Param('courseId') courseId: string) {
+    const course =await this.courseService.enrollInCourse(userId, courseId);
     return {message: "Course enrolled successfully", course}
   }
 
   @UseGuards(AuthGuard)
   @Post(':id/complete')
-  async completeCourse(@Req() req: AuthReq, @Param('id') courseId: string) {
-    const course =await this.courseService.finishCourse(req.user.id, courseId);
+  async completeCourse(@User('id') userId: string, @Param('id') courseId: string) {
+    const course =await this.courseService.finishCourse(userId, courseId);
     return {message: "Course completed successfully", course}
+  }
+
+  @UseGuards(AuthGuard)
+  @Get(':id/progress')
+  async courseProgress(@User('id') userId: string, @Param('id') courseId: string) {
+    const percentage =await this.courseService.getCourseProgress(userId, courseId);
+    return {message: "Course progress fetched successfully", percentage}
   }
 }

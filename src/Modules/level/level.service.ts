@@ -5,27 +5,8 @@ import { CreateLevelDto, UpdateLevelDto } from './dto';
 @Injectable()
 export class LevelService {
   constructor(private readonly levelRepo: LevelRepo) {}
+  //TODO: get level progress for user
 
-//   [
-//   {
-//     "order": "1",
-//     "title": "Fundamentals (Beginner)",
-//     "description": "Build core understanding of computers and programming basics for absolute beginners.",
-//     "earnScore": "1000"
-//   },
-//   {
-//     "order": "2",
-//     "title": "Intermediate",
-//     "description": "Introduce problem-solving, structured programming, and system basics.",
-//     "earnScore": "2500"
-//   },
-//   {
-//     "order": "3",
-//     "title": "Advanced",
-//     "description": "Prepare students for real-world CS concepts and advanced problem-solving. Includes high-value rewards and achievements. This level is optional.",
-//     "earnScore": "5000"
-//   }
-//   ]
   async createLevel(dto: CreateLevelDto) {
     // Check if level with same order already exists
     const existingLevel = await this.levelRepo.findOne({ filter: { order: dto.order } });
@@ -38,7 +19,7 @@ export class LevelService {
 
   async getAllLevels() {
     return this.levelRepo.find({ filter: {}, options: { sort: { order: 1 } } });
-  }
+  } 
 
   async getLevelById(id: string) {
     const level = await this.levelRepo.findById({ id });
@@ -81,4 +62,4 @@ export class LevelService {
     }
     return level;
   }
-}
+} 

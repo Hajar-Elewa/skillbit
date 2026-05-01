@@ -2,8 +2,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { Badge } from '../Badges/badge.schema';
 import { Achievement } from '../Achievements/achievement.schema';
-import { Enrollment } from '../Enrollments/enrollment.schema';
-import { Contest } from '../Contests/cotest.schema';
 
 export enum Role {
   USER = 'user',
@@ -22,7 +20,7 @@ export class User  {
   @Prop({
      type: String ,
      required: function() { return this.userAgent === 'local' }, // password is required only for local users mean just return true if userAgent is local and return false if userAgent is google
-    })
+    }) 
   password: string;
 
   @Prop({ type: String, enum: Role, default: Role.USER })
@@ -41,7 +39,7 @@ export class User  {
   level: number;
 
   @Prop({ type: Number, default: 0 })
-  score: number;
+  score: number; 
 
   @Prop({ type: String, default: 'beginner' })//last badge earned
   rank: string;
@@ -68,7 +66,7 @@ friends: mongoose.Schema.Types.ObjectId[]
 
   @Prop({ type: Boolean, default: false })
   isVerified: boolean;
-
+  
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: Badge.name }], default: [] })
   earnedBadges: mongoose.Schema.Types.ObjectId[];
 

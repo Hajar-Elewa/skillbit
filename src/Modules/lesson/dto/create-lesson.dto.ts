@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, IsNumber, IsMongoId, IsOptional, Min, Max, IsArray } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsNumber, IsMongoId, IsOptional, Min, Max, IsArray, ValidateNested } from 'class-validator';
 
 export class CreateLessonDto {
   @IsString()
@@ -18,11 +19,12 @@ export class CreateLessonDto {
 
   @IsArray()
   @IsOptional()
-  materials?: string[];
+  materials?: string[];          
+}
 
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  @Max(100)
-  passScore?: number;           
+export class CreateBulkLessonsDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateLessonDto)
+  lessons: CreateLessonDto[]
 }

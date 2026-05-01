@@ -18,7 +18,7 @@ import { AuthGuard } from 'src/common/guards/auth.guard';
 export class LevelController {
   constructor(private readonly levelService: LevelService) {}
 
- // @Auth(UserRoles.Admin)
+  @Auth(UserRoles.Admin)
   @Post()
   async createLevel(@Body() dto: CreateLevelDto) {
     const level = await this.levelService.createLevel(dto);
