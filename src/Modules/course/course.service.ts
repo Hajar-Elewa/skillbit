@@ -44,16 +44,6 @@ export class CourseService {
 
     return this.courseRepo.create(dto);
   }
-
-  async bulkCreateCourses(courses: CreateCourseDto[]) {
-  const preparedCourses = courses.map(dto => ({
-    ...dto,
-    isLocked: dto.order === 1 || dto.type === CourseType.OPTIONAL ? false : true
-  }))
-
-  return await this.courseRepo.insertMany(preparedCourses)
-}
-
   
   async getCoursesByLevel(levelnum: number) {
     const courses = await this.courseRepo.find({ level: levelnum }, {}, { sort: { order: 1 } });
@@ -254,7 +244,6 @@ export class CourseService {
       options: { new: true }
     })
 
-    
    
 
     //Update user level if this is the last course in the level
@@ -282,7 +271,6 @@ export class CourseService {
     //update user rank achievements
     await this.achievementService.checkRankAchievements(userId)
 
-    
 
     //Update Badge
     

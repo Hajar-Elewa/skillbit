@@ -6,13 +6,18 @@ import { TokenService } from "src/common";
 import { JwtService } from "@nestjs/jwt";
 import { MongooseModule } from "@nestjs/mongoose";
 import { User, UserSchema } from "src/Models/User/user.schema";
+import { MulterModule } from "@nestjs/platform-express";
+
 
 
 @Module({
     imports: [
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema }
-        ])
+        ]),
+        MulterModule.register({
+          
+        })
     ],
     controllers: [UserController],
     providers: [

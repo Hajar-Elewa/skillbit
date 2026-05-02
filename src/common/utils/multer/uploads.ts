@@ -1,10 +1,17 @@
-import { diskStorage } from "multer"
+import { diskStorage } from "multer";
+import type {Request} from 'express'
+import { randomUUID } from "crypto";
 
-export const storage = (path = "./uploads/general") => {
-  return diskStorage({
-    filename(req, file, callback) {
-      const uniqueFileName = Date.now() + "-" + file.originalname;
-      callback(null, uniqueFileName)
-    },
-    destination: path
-  })}
+export const localFileUpload = () =>{
+  return{
+     storage: diskStorage({
+                destination: (req:Request,file:Express.Multer.File,cb:Function ) => {
+                    cb(null, './uploads')
+                },
+                filename: (req:Request, file:Express.Multer.File, cb: Function ) => {
+                    const fileName = randomUUID() + "_" +Date.now() + "_"+ file.originalname
+                    cb(null, fileName)
+                }
+               })
+  }
+}

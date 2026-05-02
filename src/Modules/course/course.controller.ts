@@ -10,32 +10,25 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
-import { CreateBulkCoursesDto, CreateCourseDto } from './dto/create-course.dto';
+import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
 import { UserRoles } from 'src/common/enums/RolesEnum';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 import { User } from 'src/common/decorators/user.decorator';
-import { CreateBulkLessonsDto } from '../lesson/dto/create-lesson.dto';
 
 
 @Controller('courses')
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
+  
    @Auth(UserRoles.Admin)
    @Post()
   async createCourse(@Body() dto: CreateCourseDto) {
     const course =await this.courseService.createCourse(dto);
     return {message: "Course created successfully", course}
   } 
-
-  @Auth(UserRoles.Admin)
-  @Post('bulk')
-  async bulkCreateCourses(@Body() dto: CreateBulkCoursesDto) {
-  const courses = await this.courseService.bulkCreateCourses(dto.courses)
-  return { message: 'Courses created successfully', data: courses }
-}
 
   @UseGuards(AuthGuard)
   @Get()

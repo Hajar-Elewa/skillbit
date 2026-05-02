@@ -1,8 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { UserService } from "./user.service";
-import { AuthGuard } from "src/common";
+import { Auth, AuthGuard } from "src/common";
 import { changePasswordDto, updateProfileDto } from "./dto";
 import type { AuthReq } from "src/common/AuthReq";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { localFileUpload } from "src/common/utils/multer/uploads";
 
 @Controller("user")
 @UseGuards(AuthGuard)
@@ -73,4 +75,12 @@ export class UserController {
    const friends = await this.userService.getFriends(req.user['_id'])
    return { message: 'Friends fetched successfully', data: friends }
 }
+
+
+@Patch('upload')
+@UseInterceptors(FileInterceptor('file' , localFileUpload()))
+uploadFile(@UploadedFile() file: Express.Multer.File) {
+  console.log(file);
+}
+
 }

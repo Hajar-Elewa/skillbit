@@ -6,8 +6,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from './Modules/User/user.module';
 import devConfig from './config/env/dev.config';
-import { User, UserSchema } from './Models/User/user.schema';
-import { AdminSchema } from './Models/Admin/admin.sachema';
 import { CourseModule } from './Modules/course/course.module';
 import { LessonModule } from './Modules/lesson/lesson.module';
 import { QuizModule } from './Modules/quiz/quiz.module';
@@ -29,18 +27,18 @@ import { AchievementModule } from './Modules/achievement/achievement.module';
         uri: configService.get('DATABASE_URL'),
       }),
     }),
-    MongooseModule.forFeature([
-   {
-    name: User.name,
-    schema: UserSchema,
-    discriminators: [
-      {
-        name: "admin",
-        schema: AdminSchema,
-      }
-    ],
-   }
-    ]),
+  //   MongooseModule.forFeature([
+  //  {
+  //   name: User.name,
+  //   schema: UserSchema,
+  //   // discriminators: [
+  //   //   {
+  //   //     name: "admin",
+  //   //     schema: AdminSchema,
+  //   //   }
+  //   // ],
+  //  }
+  //   ]),
      AuthModule,
      UserModule,
      CourseModule,
