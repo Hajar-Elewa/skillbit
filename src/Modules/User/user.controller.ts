@@ -125,4 +125,14 @@ export class UserController {
     return { message: 'File uploaded successfully', data: file }
 }
 
+  @UseGuards(AuthGuard)
+  @Patch('upload-profile-picture')
+  @UseInterceptors(FileInterceptor('image'))
+ async uploadProfilePicture(
+  @UploadedFile() file: Express.Multer.File,
+  @Req() req: AuthReq
+) {
+  const result = await this.userService.uploadProfilePicture(req.user['_id'], file)
+  return { message: 'Profile picture uploaded successfully', data: result }
+}
 }

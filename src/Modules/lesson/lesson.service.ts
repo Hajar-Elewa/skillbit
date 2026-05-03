@@ -4,6 +4,7 @@ import { LessonRepo } from 'src/Models/Lessons/lesson.repo';
 import { CourseRepo } from 'src/Models/Cousrses/course.repo';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { uploadToCloudinary } from 'src/common/utils/cloudinary';
 
 //OOP 
  //=>>
@@ -71,6 +72,20 @@ export class LessonService {
     }
     return {lesson};
   }
+
+  async uploadMaterial(lessonId: string, file: Express.Multer.File) {
+  const lesson = await this.lessonRepo.findById({ id: lessonId })
+  if (!lesson) throw new NotFoundException('Lesson not found')
+
+  const result: any = await uploadToCloudinary(file, 'lesson-materials')
+
+  await this.lessonRepo.findByIdAndUpdate({
+    id: lessonId,
+    update: { $push: { materials: result.secure_url } }
+  })
+
+  return { materialUrl: result.secure_url }
+}
 
   async updateLesson(lessonId: string, dto: UpdateLessonDto) {
     const lesson = await this.lessonRepo.findByIdAndUpdate({

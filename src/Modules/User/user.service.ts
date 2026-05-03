@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException, UnauthorizedExcepti
 import { UserRepo } from "src/Models/User/user.repo"; 
 import { changePasswordDto, updateProfileDto } from "./dto";
 import { compare, Hash } from "src/common";
+import { uploadToCloudinary } from "src/common/utils/cloudinary";
 
 @Injectable()
 export class UserService {
@@ -194,4 +195,14 @@ async acceptFriendRequest(user: any, fromId: string) {
   return me
 }
 
+async uploadProfilePicture(userId: string, file: Express.Multer.File) {
+  const result: any = await uploadToCloudinary(file, 'profile-pictures')
+  
+  await this.userRepo.findByIdAndUpdate({
+    id: userId,
+    update: { profilePicture: result.secure_url }
+  })
+
+  return { profilePicture: result.secure_url }
+}
 }

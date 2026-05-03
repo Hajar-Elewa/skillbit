@@ -7,7 +7,9 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { LessonService } from './lesson.service';
 import { CreateBulkLessonsDto, CreateLessonDto } from './dto/create-lesson.dto';
@@ -15,6 +17,8 @@ import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
 import { UserRoles } from 'src/common/enums/RolesEnum';
 import { AuthGuard } from 'src/common/guards/auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 
 @Controller('lessons')
 export class LessonController {
@@ -62,4 +66,17 @@ export class LessonController {
     const lesson = await this.lessonService.getLessonWithQuiz(id);
     return {message: 'Lesson with quiz fetched successfully' , lesson};
   }
+
+  @Auth(UserRoles.Admin)
+ @Patch(':id/upload-material')
+ @UseInterceptors(FileInterceptor('file', {
+  storage: memoryStorage()
+}))
+async uploadMaterial(
+  @Param('id') lessonId: string,
+  @UploadedFile() file: Express.Multer.File
+) {
+  const result = await this.lessonService.uploadMaterial(lessonId, file)
+  return { message: 'Material uploaded successfully', data: result }
+}
 }

@@ -13,7 +13,6 @@ export class AuthService {
 
   ) { }
 
-  //with google and github we will skip email verification and directly set isVerified to true
   async signUp(dto: signUpDto) {
     const user = await this.userRepo.findByEmail(dto.email)
     if (user) {
@@ -52,6 +51,7 @@ export class AuthService {
     }
   }
 
+    //with google and github we will skip email verification and directly set isVerified to true
   async googleLogin(googleLoginDto: googleLoginDto) {
     //get data from request
     const { idToken } = googleLoginDto
