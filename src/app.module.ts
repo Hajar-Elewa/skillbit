@@ -21,12 +21,18 @@ import { AchievementModule } from './Modules/achievement/achievement.module';
           load: [devConfig],
           isGlobal:true
     }),
-    MongooseModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get('DATABASE_URL'),
-      }),
-    }),
+    
+   MongooseModule.forRootAsync({
+  inject: [ConfigService],
+  useFactory: (configService: ConfigService) => {
+    const uri = configService.getOrThrow<string>('DATABASE_URL');
+
+    console.log('Mongo URI:', uri);
+
+    return { uri };
+  },
+}),
+
   //   MongooseModule.forFeature([
   //  {
   //   name: User.name,
