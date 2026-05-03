@@ -7,7 +7,7 @@ export class Enrollment {
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   userId: mongoose.Schema.Types.ObjectId;
-
+  
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }], default: [] })
   enrolledCourses: mongoose.Schema.Types.ObjectId[];
 

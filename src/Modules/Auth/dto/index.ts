@@ -30,9 +30,6 @@ export class signUpDto {
     @IsIn(Object.values(UserLevels)) // Ensure level is one of the allowed values
     level?:string;
      
-    @IsOptional()
-    @IsBoolean()
-    isFirstTime?:boolean;
 
 }
 

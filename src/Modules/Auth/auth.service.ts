@@ -38,7 +38,6 @@ export class AuthService {
       password: await Hash(dto.password),
       role: dto.role,
       level: dto.level,
-      isFirstTime: dto.isFirstTime,
       isVerified: false,
       emailOtp: {
         code: otp,
@@ -56,22 +55,33 @@ export class AuthService {
   async googleLogin(googleLoginDto: googleLoginDto) {
     //get data from request
     const { idToken } = googleLoginDto
-
+    
     //verify the token with google
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
-    const ticket = await client.verifyIdToken({
+    let ticket: any,payload:any
+    try {
+     ticket = await client.verifyIdToken({
       idToken,
       audience: process.env.GOOGLE_CLIENT_ID  // to ensure the token is meant for our app only and not some other app that also uses google login
-    })
-
-    const payload = ticket.getPayload()
-
-    if (!payload) {
+    })    
+     payload = ticket.getPayload()
+    } catch (error) {
       throw new UnauthorizedException('Invalid Google token')
     }
-
+    
     //check if user already exists in our database
     let user:User | null = await this.userRepo.findByEmail(payload.email ?? '') // if payload.email is undefined use empty string to avoid error in findByEmail, and here if user not found it return null
+   
+    //generate accessToken and refreshToken for the user
+    const accessToken = this.tokenService.sign(
+      { _id: user?.['_id'], email: user?.email },
+      { secret: process.env.JWT_SECRET, expiresIn: '3h' }
+    )
+    const refreshToken = this.tokenService.sign(
+      { _id: user?.['_id'], email: user?.email },
+      { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '4d' }
+    )
+
     if (!user) {
       //SignUp with google data 
       //if not exist create new user with data from google and mark email as verified since google already verified it
@@ -84,18 +94,15 @@ export class AuthService {
         isFirstTime: true, // can be used to show onboarding or not
         userAgent: 'google', // to know that this user signed up with google and not local to avoid password requirement in user schema.
       })
+
+      return {
+        user,
+        accessToken,
+        refreshToken,
+      }
     }
 
-    //generate accessToken and refreshToken for the user
-    const accessToken = this.tokenService.sign(
-      { _id: user?.['_id'], email: user?.email },
-      { secret: process.env.JWT_SECRET, expiresIn: '3h' }
-    )
-    const refreshToken = this.tokenService.sign(
-      { _id: user?.['_id'], email: user?.email },
-      { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '4d' }
-    )
-
+   
     return {
       accessToken,
       refreshToken,

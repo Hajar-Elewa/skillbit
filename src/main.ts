@@ -4,6 +4,8 @@ import { ValidationPipe } from '@nestjs/common';
 import 'dotenv/config'
 import cors from "cors"
 import { LoggingInterceptor } from './common/interceptors/watchRequest.interceptor';
+import path from 'path';
+import * as express from 'express';
 
 
 async function bootstrap() {
@@ -20,9 +22,12 @@ async function bootstrap() {
   #I - Interface Segregation Principle: Clients should not be forced to depend on interfaces they do not use. This means that a class should not implement an interface that it does not use. This makes the code more maintainable and easier to understand.
   #D - Dependency Inversion Principle: High-level modules should not depend on low-level modules. Both should depend on abstractions. Abstractions should not depend on details. Details should depend on abstractions. This means that a class should depend on abstractions rather than concrete implementations. This makes the code more maintainable and easier to understand.
   */
+ 
   const port = Number(process.env.PORT || 7000)//number because process.env.PORT is string and app.listen need number.
   
-   app.use(cors({
+  app.use("/uploads", express.static(path.resolve("./uploads"))) //It is a middleware that is used to serve the files that are uploaded by the user.[static used to show the files when browser ask for it.]//👉 بيفتح الفولدر كله public, يعني أي حد يعرف path يقدر يوصله
+   
+ app.use(cors({
     origin: 'http://localhost:9000', 
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // allow only these HTTP methods
     credentials: true, // allow cookies to be sent with requests
@@ -36,7 +41,7 @@ async function bootstrap() {
      }),
    )
 
-   app.useGlobalInterceptors(new LoggingInterceptor());
+  //app.useGlobalInterceptors(new LoggingInterceptor());
 
   await app.listen(port);
   console.log('server is running on port', port)

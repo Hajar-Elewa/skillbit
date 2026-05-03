@@ -2,11 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
 import { Badge } from '../Badges/badge.schema';
 import { Achievement } from '../Achievements/achievement.schema';
-
-export enum Role {
-  USER = 'user',
-  ADMIN = 'admin',
-}
+import { UserRoles } from 'src/common';
 
 @Schema({timestamps:true})
 export class User  {
@@ -23,17 +19,14 @@ export class User  {
     }) 
   password: string;
 
-  @Prop({ type: String, enum: Role, default: Role.USER })
-  role: Role;
+  @Prop({ type: String, enum: UserRoles, default: UserRoles.User })
+  role: UserRoles;
 
   @Prop({ type: String, enum: ['local', 'google'], default: 'local' })
   userAgent: string;
 
   @Prop({ type: String, default: null })
   profilePicture: string;
-
-  @Prop({ type: String, default: null })
-  googleId: string;
 
   @Prop({ type: Number, default:0})
   level: number;
@@ -53,10 +46,6 @@ friendRequests: { from: mongoose.Schema.Types.ObjectId }[]
 @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId }], default: [] })
 friends: mongoose.Schema.Types.ObjectId[]
 
-
-  @Prop({ type: Boolean, default: true })
-  isFirstTime: boolean;
-
     @Prop({
     type: {
       code: { type: String },
@@ -74,5 +63,4 @@ friends: mongoose.Schema.Types.ObjectId[]
   earnedAchievements: mongoose.Schema.Types.ObjectId[];
 
 }
-
 export const UserSchema = SchemaFactory.createForClass(User)

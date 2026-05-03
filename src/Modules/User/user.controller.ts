@@ -1,10 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, MaxFileSizeValidator, Param, ParseFilePipe, Patch, Post, Req, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from "@nestjs/common";
 import { UserService } from "./user.service";
-import { Auth, AuthGuard } from "src/common";
+import { Auth, AuthGuard, Roles, UserRoles } from "src/common";
 import { changePasswordDto, updateProfileDto } from "./dto";
 import type { AuthReq } from "src/common/AuthReq";
-import { FileInterceptor } from "@nestjs/platform-express";
-import { localFileUpload } from "src/common/utils/multer/uploads";
+import { FileInterceptor, FilesInterceptor } from "@nestjs/platform-express";
+import { localFileUpload } from "src/common/utils/multer/localMulter";
+import type { IMulterFile } from "src/common/interfaces/multerInterface";
+import { fileValidation } from "src/common/utils/multer/validationMulter";
+import { cloudMulterConfig } from "src/common/utils/multer";
+import { StorageEnum } from "src/common/enums/multer.enum";
+
 
 @Controller("user")
 @UseGuards(AuthGuard)
@@ -40,11 +45,6 @@ export class UserController {
         await this.userService.changePassword(req.user['_id'],changePasswordDto)//changePasswordDto holds oldPassword and newPassword
         return { message: 'Password changed successfully' }
     }  
-    
-    @Post('logout')
-    async logout() {
-      return { message: 'Logged out successfully' }
-}
 
    @Post('send-friend-request/:id')
    async sendFriendRequest(@Param('id') toId: string, @Req() req: AuthReq) {
@@ -75,12 +75,54 @@ export class UserController {
    const friends = await this.userService.getFriends(req.user['_id'])
    return { message: 'Friends fetched successfully', data: friends }
 }
+  
+  @Auth(UserRoles.Admin)
+  @Patch('upload-file')
+  @UseInterceptors(FileInterceptor('file' , localFileUpload({ folder: 'avatar',validation:fileValidation.IMAGE ,maxSize:2 })))
+  uploadFile(//no need of async and await here because file is already uploaded by multer
+    @UploadedFile(
+      new ParseFilePipe({
+        validators:[new MaxFileSizeValidator({maxSize:1024*1024*2})],//runs before localFileUpload [that means validation.fileValidation.IMAGE will]
+        fileIsRequired: true, // Ensure file is required
+        
+      })) file: IMulterFile) {
+   
+   
+    return { message: 'File uploaded successfully', data: file }
+}
 
 
-@Patch('upload')
-@UseInterceptors(FileInterceptor('file' , localFileUpload()))
-uploadFile(@UploadedFile() file: Express.Multer.File) {
-  console.log(file);
+   @Patch('cover-files')
+   @UseInterceptors(FilesInterceptor(
+    'coverImages',
+    10,//max number of files to upload 
+    localFileUpload({ folder: 'coverFiles',validation:fileValidation.IMAGE ,maxSize:2 })))
+    uploadFiles(//no need of async and await here because file is already uploaded by multer
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators:[new MaxFileSizeValidator({maxSize:1024*1024*2})],//runs before localFileUpload [that means validation.fileValidation.IMAGE will]
+        fileIsRequired: true, // Ensure file is required
+        
+      })) files:Array<IMulterFile>) {
+   
+   
+    return { message: 'File uploaded successfully', data: files }
+ }
+
+  @Auth(UserRoles.Admin)
+  @Patch('cloud-file')
+  @UseInterceptors(FileInterceptor('file' , 
+    cloudMulterConfig({storageApproach:StorageEnum.DISK,validation:fileValidation.IMAGE ,maxSize:2 })))
+  uploadCloudFile(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators:[new MaxFileSizeValidator({maxSize:1024*1024*2})],//runs before localFileUpload [that means validation.fileValidation.IMAGE will]
+        fileIsRequired: true, 
+        
+      })) file: IMulterFile) {
+   
+   
+    return { message: 'File uploaded successfully', data: file }
 }
 
 }
