@@ -21,34 +21,35 @@ export class AuthService {
 
     const otp = generateOTP(6)
 
-    const emailSent = await sendEmail({
-      to: dto.email,
-      from: process.env.EMAIL,
-      subject: 'confirmation email',
-      html: `<h1>Welcome ${dto.fullname}</h1><p>Please confirm your email using this OTP: ${otp}</p>`
-    })
-    if (!emailSent) {
-      throw new InternalServerErrorException('Failed to send email, please try again')
-    }
+   const createdUser = await this.userRepo.create({
+  fullname: dto.fullname,
+  email: dto.email,
+  password: await Hash(dto.password),
+  role: dto.role,
+  level: dto.level,
+  isVerified: false,
+  emailOtp: {
+    code: otp,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+  }
+});
 
-    const createdUser = await this.userRepo.create({
-      fullname: dto.fullname,
-      email: dto.email,
-      password: await Hash(dto.password),
-      role: dto.role,
-      level: dto.level,
-      isVerified: false,
-      emailOtp: {
-        code: otp,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // OTP expires in 10 minutes
-      }
-    })
+  try {
+  await sendEmail({
+    to: dto.email,
+    from: process.env.EMAIL,
+    subject: 'confirmation email',
+    html: `<h1>Welcome ${dto.fullname}</h1><p>OTP: ${otp}</p>`
+  });
+} catch (err) {
+  console.log('Email failed but user created:', err);
+}
 
     return {
-      fullname: createdUser.fullname,
-      email: createdUser.email,
-      role: createdUser.role,
-    }
+  fullname: createdUser.fullname,
+  email: createdUser.email,
+  role: createdUser.role,
+}
   }
 
     //with google and github we will skip email verification and directly set isVerified to true
