@@ -5,8 +5,8 @@ import * as dns from 'dns';
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // true لمنفذ 465 (SSL/TLS)
+  port: 587,
+  secure: false, 
   auth: {
     user: process.env.EMAIL,
     pass: process.env.PASS,
@@ -14,18 +14,9 @@ const transporter = nodemailer.createTransport({
   tls: {
   rejectUnauthorized: false
 },
-  lookup: (hostname: string, options: any, callback: any) => {
-    // التحقق: إذا لم يتم تمرير خيارات، نقوم بإنشائها
-    if (typeof options === 'function') {
-        callback = options;
-        options = {};
-    }
-    // إجبار استخدام IPv4
-    options.family = 4;
-    // استدعاء دالة الـ DNS الأصلية
-    dns.lookup(hostname, options, callback);
-  }
-} as any); 
+  connectionTimeout: 10000, // مهم
+ 
+})
 
 
 export const sendEmail = async ( 

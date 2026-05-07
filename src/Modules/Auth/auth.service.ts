@@ -5,52 +5,54 @@ import { googleLoginDto, loginDto, signUpDto } from "./dto";
 import { OAuth2Client } from "google-auth-library";
 import { User } from "src/Models/User/user.schema";
 
+
 @Injectable()
+
 export class AuthService {
   constructor(
     private readonly userRepo: UserRepo,
-    private readonly tokenService: TokenService
-
+    private readonly tokenService: TokenService,
   ) { }
 
-  async signUp(dto: signUpDto) {
-    const user = await this.userRepo.findByEmail(dto.email)
-    if (user) {
-      throw new ConflictException('User already exists')
-    }
-
-    const otp = generateOTP(6)
-
-   const createdUser = await this.userRepo.create({
-  fullname: dto.fullname,
-  email: dto.email,
-  password: await Hash(dto.password),
-  role: dto.role,
-  level: dto.level,
-  isVerified: false,
-  emailOtp: {
-    code: otp,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+ async signUp(dto: signUpDto) {
+  const user = await this.userRepo.findByEmail(dto.email);
+  if (user) {
+    throw new ConflictException('User already exists');
   }
-});
 
-  try {
-  await sendEmail({
+  const otp = generateOTP(6);
+  
+  const emailSent= await sendEmail({
     to: dto.email,
     from: process.env.EMAIL,
-    subject: 'confirmation email',
-    html: `<h1>Welcome ${dto.fullname}</h1><p>OTP: ${otp}</p>`
-  });
-} catch (err) {
-  console.log('Email failed but user created:', err);
-}
+    subject: 'OTP Request',
+    html: `<h1>Hello ${dto.fullname}</h1>
+             <p>Your OTP is: <strong>${otp}</strong></p>
+             <p>This OTP will expire in 10 minutes.</p>`
+  })
 
-    return {
-  fullname: createdUser.fullname,
-  email: createdUser.email,
-  role: createdUser.role,
-}
+  if(!emailSent){
+    throw new InternalServerErrorException('Failed to send email, please try again')
   }
+  const createdUser = await this.userRepo.create({
+    fullname: dto.fullname,
+    email: dto.email,
+    password: await Hash(dto.password),
+    role: dto.role,
+    level: dto.level,
+    isVerified: false,
+    emailOtp: {
+      code: otp,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    },
+  })
+
+  return {
+    fullname: createdUser.fullname,
+    email: createdUser.email,
+    role: createdUser.role,
+  };
+}
 
     //with google and github we will skip email verification and directly set isVerified to true
   async googleLogin(googleLoginDto: googleLoginDto) {
