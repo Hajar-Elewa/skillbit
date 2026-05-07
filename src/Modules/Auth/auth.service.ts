@@ -7,7 +7,6 @@ import { User } from "src/Models/User/user.schema";
 
 
 @Injectable()
-
 export class AuthService {
   constructor(
     private readonly userRepo: UserRepo,
@@ -25,6 +24,7 @@ export class AuthService {
   try {
     await sendEmail({
       to: dto.email,
+      from:process.env.EMAIL,
       subject: 'OTP Request',
       html: `<h1>Hello ${dto.fullname}</h1>
              <p>Your OTP is: <strong>${otp}</strong></p>
@@ -201,6 +201,7 @@ export class AuthService {
    try {
     await sendEmail({
       to: user.email,
+      from:process.env.EMAIL,
       subject: 'OTP Request',
       html: `<h1>Hello ${user.fullname}</h1>
              <p>Your OTP is: <strong>${otp}</strong></p>
@@ -257,6 +258,7 @@ export class AuthService {
    try {
     await sendEmail({
       to: email,
+      from:process.env.EMAIL,
       subject: 'Reset Password',
       html: `<h1>Hello ${user.fullname}</h1> 
                  <p>Your reset password OTP is: <strong>${otp}</strong></p>
