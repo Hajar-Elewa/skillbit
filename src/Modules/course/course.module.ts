@@ -9,7 +9,6 @@ import { LevelRepo } from 'src/Models/Levels/level.repo';
 import { Lesson, LessonSchema } from 'src/Models/Lessons/lesson.schem';
 import { LessonRepo } from 'src/Models/Lessons/lesson.repo';
 import { Enrollment, EnrollmentSchema } from 'src/Models/Enrollments/enrollment.schema';
-import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
 import { User, UserSchema } from 'src/Models/User/user.schema';
 import { UserRepo } from 'src/Models/User/user.repo';
 import { TokenService } from 'src/common/services/token.service';
@@ -20,16 +19,17 @@ import { JwtService } from '@nestjs/jwt';
 import { AchievementService } from '../achievement/achievement.service';
 import { AchievementRepo } from 'src/Models/Achievements/achievement.repo';
 import { Achievement, AchievementSchema } from 'src/Models/Achievements/achievement.schema';
+import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Course.name,      schema: CourseSchema },
-      { name: Level.name,       schema: LevelSchema },
-      { name: Lesson.name,      schema: LessonSchema },
-      { name: Enrollment.name,  schema: EnrollmentSchema },
-      { name: User.name,        schema: UserSchema },
-      { name: Quiz.name,        schema: QuizSchema },
+      { name: Course.name, schema: CourseSchema },
+      { name: Level.name, schema: LevelSchema },
+      { name: Lesson.name, schema: LessonSchema },
+      { name: Enrollment.name, schema: EnrollmentSchema },
+      { name: User.name, schema: UserSchema },
+      { name: Quiz.name, schema: QuizSchema },
       { name: Achievement.name, schema: AchievementSchema }
 
     ]),
@@ -49,6 +49,6 @@ import { Achievement, AchievementSchema } from 'src/Models/Achievements/achievem
     AchievementService,
     AchievementRepo
   ],
-  exports: [CourseService, CourseRepo,AchievementService],
+  exports: [CourseService, CourseRepo, AchievementService],
 })
-export class CourseModule {}
+export class CourseModule { }

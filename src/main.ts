@@ -28,8 +28,7 @@ async function bootstrap() {
   app.use("/uploads", express.static(path.resolve("./uploads"))) //It is a middleware that is used to serve the files that are uploaded by the user.[static used to show the files when browser ask for it.]//👉 بيفتح الفولدر كله public, يعني أي حد يعرف path يقدر يوصله
    
  app.use(cors({
-    origin: 'http://localhost:9000', 
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // allow only these HTTP methods
+   origin:true, 
     credentials: true, // allow cookies to be sent with requests
   }))
 

@@ -1,15 +1,15 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'; 
-import { Types } from 'mongoose'; 
-import { CourseRepo } from 'src/Models/Cousrses/course.repo'; 
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Types } from 'mongoose';
+import { CourseRepo } from 'src/Models/Cousrses/course.repo';
 import { CourseType } from 'src/Models/Cousrses/course.schema';
 import { LevelRepo } from 'src/Models/Levels/level.repo';
 import { LessonRepo } from 'src/Models/Lessons/lesson.repo';
 import { CreateBulkCoursesDto, CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { UserRepo } from 'src/Models/User/user.repo';
-import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
-import { QuizRepo } from 'src/Models/Quizes/quiz.repo'; 
+import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
 import { AchievementService } from '../achievement/achievement.service';
+import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
 
 @Injectable()
 export class CourseService {
@@ -21,10 +21,10 @@ export class CourseService {
     private readonly enrollmentRepo: EnrollmentRepo,
     private readonly quizRepo: QuizRepo,
     private readonly achievementService: AchievementService,
-  ) { }  
+  ) { }
 
   //TODO:get course details with lessons and quizzes => update getCourseById
-  
+
   async createCourse(dto: CreateCourseDto) {
     //check if level exists
     const level = await this.levelRepo.findOne({ filter: { order: dto.level } });
@@ -44,43 +44,43 @@ export class CourseService {
 
     return this.courseRepo.create(dto);
   }
-  
+
   async getCoursesByLevel(levelnum: number) {
     const courses = await this.courseRepo.find({ level: levelnum }, {}, { sort: { order: 1 } });
     return courses;
-  } 
-
- async getCourseById(courseId: string) {
-  const course = await this.courseRepo.findById({ id: courseId })
-  if (!course) throw new NotFoundException('Course not found')
-
-  const lessons = await this.lessonRepo.find(
-    { course: courseId }, // ✅ matches schema
-    {},
-    { sort: { order: 1 } }
-  )
-
-  const lessonsWithQuizzes = await Promise.all(
-    lessons.map(async (lesson) => {
-      const quiz = await this.quizRepo.findOne({
-        filter: { lesson: lesson['_id'] } // ✅ check your schema field name
-      })
-      return {
-        ...lesson.toObject(),
-        quiz: quiz || null
-      }
-    })
-  )
-
-  return {
-    ...course.toObject(),
-    lessons: lessonsWithQuizzes
   }
-}
+
+  async getCourseById(courseId: string) {
+    const course = await this.courseRepo.findById({ id: courseId })
+    if (!course) throw new NotFoundException('Course not found')
+
+    const lessons = await this.lessonRepo.find(
+      { course: courseId }, // ✅ matches schema
+      {},
+      { sort: { order: 1 } }
+    )
+
+    const lessonsWithQuizzes = await Promise.all(
+      lessons.map(async (lesson) => {
+        const quiz = await this.quizRepo.findOne({
+          filter: { lesson: lesson['_id'] } // ✅ check your schema field name
+        })
+        return {
+          ...lesson.toObject(),
+          quiz: quiz || null
+        }
+      })
+    )
+
+    return {
+      ...course.toObject(),
+      lessons: lessonsWithQuizzes
+    }
+  }
 
   async getCourseByName(name: string) {
     const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') //means if there is any special character in the name it will be treated as a normal character and not a special character in the regex.
-    const courses= await this.courseRepo.find({ title: { $regex: escaped, $options: 'i' } }, {}, { sort: { order: 1 } });
+    const courses = await this.courseRepo.find({ title: { $regex: escaped, $options: 'i' } }, {}, { sort: { order: 1 } });
     console.log(courses)
     return courses;
   }
@@ -113,91 +113,91 @@ export class CourseService {
       return this.enrollmentRepo.findOneAndUpdate({
         filter: { userId },
         update: { $push: { enrolledCourses: courseId } },
-        options: { new: true ,upsert: true} //upsert: true means if the enrollment record is not found, it will be created
+        options: { new: true, upsert: true } //upsert: true means if the enrollment record is not found, it will be created
       })
     }
-    
+
     //check if this course is Unlocked or not
-   if(course.isLocked){
-    throw new BadRequestException('Course is locked, you should complete the previous course first')
-   }
-  
-   //update enrollment
+    if (course.isLocked) {
+      throw new BadRequestException('Course is locked, you should complete the previous course first')
+    }
+
+    //update enrollment
     await this.enrollmentRepo.findOneAndUpdate({
       filter: { userId },
       update: { $push: { enrolledCourses: courseId } },
-      options: { new: true } 
+      options: { new: true }
     })
-   return true
+    return true
   }
 
   async getCourseProgress(userId: string, courseId: string) {
     //here we calc the percentage of passed quizes (from the total quizes in the course) , then we update the courseProgress in the enrollment record
-  
+
     const course = await this.courseRepo.findById({ id: courseId });
     if (!course) throw new NotFoundException('Course not found');
-    
+
     const enrollment = await this.enrollmentRepo.findOne({ filter: { userId } });
     if (!enrollment) throw new NotFoundException('You should enroll in courses first');
-    
-      // 4. get all quizzes in this course
-     const allQuizzes = await this.quizRepo.find({ filter: { course: courseId } })
-     const totalQuizzes = allQuizzes.length
-  
-      // 5. get passed quizzes count for this course 
-      const completedQuizIds = enrollment.completedQuizes.map((id: any) => id.toString())
-      const courseQuizIds = allQuizzes.map((q: any) => q['_id'].toString())
-      const passedQuizzesCount = courseQuizIds.filter(id => completedQuizIds.includes(id)).length 
-  
-      // 6. calculate percentage
-     const percentage = (passedQuizzesCount / totalQuizzes) * 100
-     
+
+    // 4. get all quizzes in this course
+    const allQuizzes = await this.quizRepo.find({ filter: { course: courseId } })
+    const totalQuizzes = allQuizzes.length
+
+    // 5. get passed quizzes count for this course 
+    const completedQuizIds = enrollment.completedQuizes.map((id: any) => id.toString())
+    const courseQuizIds = allQuizzes.map((q: any) => q['_id'].toString())
+    const passedQuizzesCount = courseQuizIds.filter(id => completedQuizIds.includes(id)).length
+
+    // 6. calculate percentage
+    const percentage = (passedQuizzesCount / totalQuizzes) * 100
+
     //update course progress in the enrollment record
     await this.enrollmentRepo.findOneAndUpdate({
       filter: { userId },
-      update: { $set: { courseProgress: {courseId, percentage} } }, //set => replace the value (old vlaue => new value)
-      options: { new: true } 
+      update: { $set: { courseProgress: { courseId, percentage } } }, //set => replace the value (old vlaue => new value)
+      options: { new: true }
     })
     return percentage;
   }
 
   async finishCourse(userId: string, courseId: string) {
-  // 1. check course exists
-  const course = await this.courseRepo.findById({ id: courseId })
-  if (!course) throw new NotFoundException('Course not found')
+    // 1. check course exists
+    const course = await this.courseRepo.findById({ id: courseId })
+    if (!course) throw new NotFoundException('Course not found')
 
-  // 2. check enrollment exists
-  const enrollment = await this.enrollmentRepo.findOne({ filter: { userId } })
-  if (!enrollment) throw new NotFoundException('You should enroll in courses first')
-  
-  // 3. check not already completed
-  if (enrollment.completedCourses.some((id: any) => id.toString() === courseId))
-    throw new BadRequestException('Course already completed')
-  
-  //get course progress
-  const percentage = enrollment.courseProgress.find((item: any) => item.courseId.toString() === courseId)?.percentage 
-  if (!percentage) throw new NotFoundException('Course progress not found');
+    // 2. check enrollment exists
+    const enrollment = await this.enrollmentRepo.findOne({ filter: { userId } })
+    if (!enrollment) throw new NotFoundException('You should enroll in courses first')
 
-  // Scenario 1 — below 70% → error 
-  if (percentage < 70) {
-    throw new BadRequestException(
-      `You must pass at least 70% of quizzes. Current: ${Math.round(percentage)}%`
-    )
-  }
+    // 3. check not already completed
+    if (enrollment.completedCourses.some((id: any) => id.toString() === courseId))
+      throw new BadRequestException('Course already completed')
 
-  // Scenario 2 — passed 70%+ but not all quizzes
-  if (percentage >= 70 && percentage < 100) {
-    await this.enrollmentRepo.findOneAndUpdate({
-      filter: { userId },
-      update: {
-        $pull: { enrolledCourses: courseId },
-        $push: { passedCourses: courseId }
-      },
-      options: { new: true }
-    })
-  }
-  
-  // Scenario 3 — completed ALL quizzes (100%) 
+    //get course progress
+    const percentage = enrollment.courseProgress.find((item: any) => item.courseId.toString() === courseId)?.percentage
+    if (!percentage) throw new NotFoundException('Course progress not found');
+
+    // Scenario 1 — below 70% → error 
+    if (percentage < 70) {
+      throw new BadRequestException(
+        `You must pass at least 70% of quizzes. Current: ${Math.round(percentage)}%`
+      )
+    }
+
+    // Scenario 2 — passed 70%+ but not all quizzes
+    if (percentage >= 70 && percentage < 100) {
+      await this.enrollmentRepo.findOneAndUpdate({
+        filter: { userId },
+        update: {
+          $pull: { enrolledCourses: courseId },
+          $push: { passedCourses: courseId }
+        },
+        options: { new: true }
+      })
+    }
+
+    // Scenario 3 — completed ALL quizzes (100%) 
     if (percentage === 100 && course.type === CourseType.MANDATORY) {
       await this.enrollmentRepo.findOneAndUpdate({
         filter: { userId },
@@ -209,7 +209,7 @@ export class CourseService {
       })
     }
 
-    
+
     if (percentage === 100 && course.type === CourseType.OPTIONAL) {
       await this.enrollmentRepo.findOneAndUpdate({
         filter: { userId },
@@ -220,7 +220,7 @@ export class CourseService {
         options: { new: true }
       })
     }
-    
+
     //unlock next course if this is a mandatory course 
     if (course.type === CourseType.MANDATORY) {
       const nextCourse = await this.courseRepo.findOne({ filter: { $and: [{ level: course.level, order: course.order + 1 }] } })
@@ -232,11 +232,11 @@ export class CourseService {
         })
       }
     }
-    
+
     //check educational achievements 
     await this.achievementService.checkEducationalAchievements(userId)
 
-      //update user score
+    //update user score
     const bonusCoursePoints = course.earnScore
     await this.userRepo.findOneAndUpdate({
       filter: { _id: userId },
@@ -244,37 +244,37 @@ export class CourseService {
       options: { new: true }
     })
 
-   
+
 
     //Update user level if this is the last course in the level
     const coursesCountInLevel = (await this.courseRepo.find({ level: course.level })).length
-    if(coursesCountInLevel === course.order) {
+    if (coursesCountInLevel === course.order) {
 
       //get bonus level points
-    const user = await this.userRepo.findById({ id: userId })
-    const userLevel = user?.level ?? 0
-  
-    const level = await this.levelRepo.find({ filter: { order: userLevel  } })
-    const bonusLevelPoints = level['earnScore']
+      const user = await this.userRepo.findById({ id: userId })
+      const userLevel = user?.level ?? 0
+
+      const level = await this.levelRepo.find({ filter: { order: userLevel } })
+      const bonusLevelPoints = level['earnScore']
 
       await this.userRepo.findOneAndUpdate({
         filter: { _id: userId },
-        update:  { $inc: { level: 1, score: bonusLevelPoints } },
+        update: { $inc: { level: 1, score: bonusLevelPoints } },
         options: { new: true }
       })
 
       //check level achievements
-      await this.achievementService.checkLevelAchievements(userId,(userLevel+1).toString());
+      await this.achievementService.checkLevelAchievements(userId, (userLevel + 1).toString());
     }
-   
-     
+
+
     //update user rank achievements
     await this.achievementService.checkRankAchievements(userId)
 
 
     //Update Badge
-    
-    
-  
+
+
+
   }
 }

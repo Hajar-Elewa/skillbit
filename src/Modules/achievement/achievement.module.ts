@@ -9,9 +9,9 @@ import { TokenService } from 'src/common';
 import { JwtService } from '@nestjs/jwt';
 import { AchievementService } from './achievement.service';
 import { CourseRepo } from 'src/Models/Cousrses/course.repo';
-import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
 import { Course, CourseSchema } from 'src/Models/Cousrses/course.schema';
 import { Enrollment, EnrollmentSchema } from 'src/Models/Enrollments/enrollment.schema';
+import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
 
 @Module({
   imports: [
@@ -23,6 +23,6 @@ import { Enrollment, EnrollmentSchema } from 'src/Models/Enrollments/enrollment.
     ])
   ],
   controllers: [AchievementController],
-  providers: [AchievementService, AchievementRepo, UserRepo, TokenService,JwtService , EnrollmentRepo,CourseRepo],
+  providers: [AchievementService, AchievementRepo, UserRepo, TokenService, JwtService, EnrollmentRepo, CourseRepo],
 })
 export class AchievementModule { }

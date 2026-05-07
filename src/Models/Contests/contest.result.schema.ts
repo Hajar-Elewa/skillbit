@@ -17,8 +17,8 @@ export class ContestResult {
 
   @Prop({ type: Number, default: 0 })
   score: number; // %
-
-  @Prop({ type: Number, default: 0 })
+  
+  @Prop({ type: Number, default: 0 }) 
   rank: number;
 
   @Prop({ type: Number, default: 0 })

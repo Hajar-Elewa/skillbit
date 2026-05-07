@@ -3,8 +3,8 @@ import { AchievementRepo } from 'src/Models/Achievements/achievement.repo';
 import { UserRepo } from 'src/Models/User/user.repo';
 import { CreateAchievementDto } from './dto/create-achievement.dto';
 import { UpdateAchievementDto } from './dto/update-achievement.dto';
-import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
 import { CourseRepo } from 'src/Models/Cousrses/course.repo';
+import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
 
 
 @Injectable()
@@ -14,13 +14,23 @@ export class AchievementService {
     private readonly userRepo: UserRepo,
     private readonly enrollmentRepo: EnrollmentRepo,
     private readonly courseRepo: CourseRepo,
-  ) {}
+  ) { }
 
-  
+
   async createAchievement(dto: CreateAchievementDto) {
+    //if the data is already in the database, don't insert it
+    const existingAchievement = await this.achievementRepo.findOne({ filter: { name: dto.name } })
+    if (existingAchievement) throw new BadRequestException('Achievement already exists')
     return await this.achievementRepo.create(dto)
   }
-  
+
+  async seedData(dto: CreateAchievementDto[]) {
+    //if the data is already in the database, don't insert it
+    const existingAchievements = await this.achievementRepo.find({})
+    if (existingAchievements.length > 0) return 1
+    return this.achievementRepo.insertMany(dto);
+  }
+
   async updateAchievement(id: string, dto: UpdateAchievementDto) {
     const achievement = await this.achievementRepo.findByIdAndUpdate({
       id,
@@ -41,6 +51,9 @@ export class AchievementService {
     return await this.achievementRepo.find({})
   }
 
+
+
+  
   // check level achievements after course completed
   async checkLevelAchievements(userId: string, courseLevel: string) {
     const achievementName = {
@@ -58,9 +71,9 @@ export class AchievementService {
     if (!user) return
 
     const score = user.score
-    if (score >= 1000)  await this.awardAchievement(userId, 'The Novice')
-    if (score >= 3500)  await this.awardAchievement(userId, 'The Specialist')
-    if (score >= 8500)  await this.awardAchievement(userId, 'The Expert')
+    if (score >= 1000) await this.awardAchievement(userId, 'The Novice')
+    if (score >= 3500) await this.awardAchievement(userId, 'The Specialist')
+    if (score >= 8500) await this.awardAchievement(userId, 'The Expert')
     if (score >= 20000) await this.awardAchievement(userId, 'The Master')
     if (score >= 50000) await this.awardAchievement(userId, 'The Grandmaster')
   }
@@ -69,7 +82,7 @@ export class AchievementService {
   async checkEducationalAchievements(userId: string) {
     const enrollment = await this.enrollmentRepo.findOne({ filter: { userId } })
     if (!enrollment) throw new NotFoundException('You should enroll in courses first')
-   
+
     const allRequired = await this.courseRepo.find({ type: { $ne: 'optional' } })
     const allOptional = await this.courseRepo.find({ type: 'optional' })
 
@@ -126,8 +139,7 @@ export class AchievementService {
     await this.userRepo.findByIdAndUpdate({
       id: userId,
       update: {
-        $push: { earnedAchievements: achievement['_id'] },
-        $inc: { score: achievement.xpReward }
+        $push: { earnedAchievements: achievement['_id'] }
       }
     })
 

@@ -13,6 +13,8 @@ import { ContestModule } from './Modules/contest/contest.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LevelModule } from './Modules/level/level.module';
 import { AchievementModule } from './Modules/achievement/achievement.module';
+import { LeaderboardModule } from './Modules/leaderboard/leaderboard.module';
+import { BadgesModule } from './Modules/badges/badges.module';
 
 @Module({
   imports: [
@@ -26,9 +28,6 @@ import { AchievementModule } from './Modules/achievement/achievement.module';
   inject: [ConfigService],
   useFactory: (configService: ConfigService) => {
     const uri = configService.getOrThrow<string>('DATABASE_URL');
-
-    console.log('Mongo URI:', uri);
-
     return { uri };
   },
 }),
@@ -52,7 +51,9 @@ import { AchievementModule } from './Modules/achievement/achievement.module';
      QuizModule,
      ContestModule,
      LevelModule,
-     AchievementModule
+     AchievementModule,
+     LeaderboardModule,
+     BadgesModule
     ],
   controllers: [AppController],
   providers: [AppService],

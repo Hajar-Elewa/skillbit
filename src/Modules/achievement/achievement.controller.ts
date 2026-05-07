@@ -14,6 +14,13 @@ export class AchievementController {
     return { message: 'Achievement created successfully', data: achievement }
   }
 
+  @Post('seed')
+  async seedAchievements(@Body() achievementsDto: CreateAchievementDto[]) {
+    const achievement = await this.achievementService.seedData(achievementsDto);
+    if(achievement === 1) return { message: 'Achievements already seeded' }
+    return { message: 'Achievements seeded successfully', data: achievement }
+  }
+
   @Auth(UserRoles.Admin)
   @Patch('update/:id')
   async updateAchievement(@Param('id') id: string, @Body() dto: UpdateAchievementDto) {

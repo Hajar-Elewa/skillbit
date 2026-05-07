@@ -5,13 +5,13 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-/*
+
   @Get() //act as api [method=>GET, url=>'/']
   getHello(): string {
-   return 'hi from nestjs';
-   //return this.appService.getHello();
+   //return 'hi from nestjs';
+   return this.appService.getHello();
   }
-*/
+
   /*
   @Post('signup') //defualt statues code for post method is 201 but we can change it by using @HttpCode() decorator
 //@HttpCode(200)

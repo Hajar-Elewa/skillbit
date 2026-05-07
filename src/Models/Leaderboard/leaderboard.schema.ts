@@ -11,7 +11,7 @@ export class Leaderboard  {
   score: number;
 
   @Prop({ type: Number, default: 0 })
-  rank: number;
+  contestRank: number;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Badge', default: null })
   badgeId: mongoose.Schema.Types.ObjectId;
