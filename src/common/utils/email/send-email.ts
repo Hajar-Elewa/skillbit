@@ -1,8 +1,5 @@
-import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
 import 'dotenv/config';
-
-// Initialize Resend with your API key
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -13,12 +10,19 @@ export interface SendEmailOptions {
 }
 
 export const sendEmail = async (options: SendEmailOptions) => {
-  // If no 'from' is provided, we use the one from env or the Resend testing email
-  const fromEmail = options.from || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.PASS,
+    },
+  });
 
   try {
-    const data = await resend.emails.send({
-      from: fromEmail,
+    const info = await transporter.sendMail({
+      from: options.from || `"Skillbit" <${process.env.EMAIL}>`,
       to: options.to,
       subject: options.subject,
       html: options.html || '',
@@ -27,7 +31,7 @@ export const sendEmail = async (options: SendEmailOptions) => {
 
     return true;
   } catch (error) {
-    console.error('Error sending email with Resend:', error);
+    console.error('Error sending email with Nodemailer:', error);
     throw error;
   }
 };
