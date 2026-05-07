@@ -22,13 +22,12 @@ export class AuthService {
 
   const otp = generateOTP(6);
   
-  //using try catch to handle email sending errors
   try {
-    await sendEmail({
+    sendEmail({
       to: dto.email,
       from: process.env.EMAIL,
       subject: 'OTP Request',
-    html: `<h1>Hello ${dto.fullname}</h1>
+      html: `<h1>Hello ${dto.fullname}</h1>
              <p>Your OTP is: <strong>${otp}</strong></p>
              <p>This OTP will expire in 10 minutes.</p>`
   })
