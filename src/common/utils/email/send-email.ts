@@ -1,44 +1,33 @@
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import 'dotenv/config';
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,        
-  secure: false, 
-  debug: true,
-  logger: true,   
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.PASS,
-  },
-  tls: {
-    rejectUnauthorized: false
-  },
-  family:4
-  
-})
+// Initialize Resend with your API key
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-export const sendEmail = async ( 
-  options: nodemailer.SendMailOptions,
-)=> {
-  await transporter.sendMail(options) 
-  return true
+export interface SendEmailOptions {
+  to: string | string[];
+  subject: string;
+  html?: string;
+  text?: string;
+  from?: string;
 }
 
+export const sendEmail = async (options: SendEmailOptions) => {
+  // If no 'from' is provided, we use the one from env or the Resend testing email
+  const fromEmail = options.from || process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
-//every time we call sendEmail function it will create a new transporter which is not efficient so we can create transporter once and reuse it every time we call sendEmail function.ودا في الطريقة اللي فوق
-// export async function sendEmail(sendMailOptions: nodemailer.SendMailOptions) {
-//     const transporter = nodemailer.createTransport({
-//     host: 'smtp.gmail.com',
-//     port: 465,
-//     auth: {
-//     user: process.env.EMAIL,
-//     pass: process.env.PASS,
-//     },
-//     tls: {
-//     rejectUnauthorized: false
-//     }
-//     });
+  try {
+    const data = await resend.emails.send({
+      from: fromEmail,
+      to: options.to,
+      subject: options.subject,
+      html: options.html || '',
+      text: options.text || '',
+    });
 
-//     await transporter.sendMail(sendMailOptions);
-// }
+    return true;
+  } catch (error) {
+    console.error('Error sending email with Resend:', error);
+    throw error;
+  }
+};
