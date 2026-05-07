@@ -1,17 +1,24 @@
  import * as nodemailer from 'nodemailer';
  import 'dotenv/config';
+import * as dns from 'dns'; 
+
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, 
+  port: 465,
+  secure: true, // true لمنفذ 465 (SSL/TLS)
   auth: {
     user: process.env.EMAIL,
     pass: process.env.PASS,
   },  
   tls: {
   rejectUnauthorized: false
-}
+},
+lookup: function (hostname, options, callback) {
+    // إجبار النظام على استخدام IPv4 (Family = 4)
+    options.family = 4; 
+    dns.lookup(hostname, options, callback);
+  }
 })
 
 export const sendEmail = async ( 
