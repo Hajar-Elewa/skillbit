@@ -253,18 +253,18 @@ export class AuthService {
 
     const otp = generateOTP(6)
 
-    // const emailSent = await sendEmail({
-    //   to: email,
-    //   from: process.env.EMAIL,
-    //   subject: 'Reset Password',
-    //   html: `<h1>Hello ${user.fullname}</h1> 
-    //              <p>Your reset password OTP is: <strong>${otp}</strong></p>
-    //              <p>This OTP will expire in 10 minutes.</p>`
-    // })
+    const emailSent = await sendEmail({
+      to: email,
+      from: process.env.EMAIL,
+      subject: 'Reset Password',
+      html: `<h1>Hello ${user.fullname}</h1> 
+                 <p>Your reset password OTP is: <strong>${otp}</strong></p>
+                 <p>This OTP will expire in 10 minutes.</p>`
+    })
 
-    // if (!emailSent) {
-    //   throw new InternalServerErrorException('Failed to send email, please try again')
-    // }
+    if (!emailSent) {
+      throw new InternalServerErrorException('Failed to send email, please try again')
+    }
 
     //update user with new otp and set it expires in 10 minutes
     await this.userRepo.Update({
