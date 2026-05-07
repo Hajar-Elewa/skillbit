@@ -1,5 +1,5 @@
- import * as nodemailer from 'nodemailer';
- import 'dotenv/config';
+import * as nodemailer from 'nodemailer';
+import 'dotenv/config';
 import * as dns from 'dns'; 
 
 
@@ -14,12 +14,19 @@ const transporter = nodemailer.createTransport({
   tls: {
   rejectUnauthorized: false
 },
-lookup: function (hostname, options, callback) {
-    // إجبار النظام على استخدام IPv4 (Family = 4)
-    options.family = 4; 
+  lookup: (hostname: string, options: any, callback: any) => {
+    // التحقق: إذا لم يتم تمرير خيارات، نقوم بإنشائها
+    if (typeof options === 'function') {
+        callback = options;
+        options = {};
+    }
+    // إجبار استخدام IPv4
+    options.family = 4;
+    // استدعاء دالة الـ DNS الأصلية
     dns.lookup(hostname, options, callback);
   }
-})
+} as any); 
+
 
 export const sendEmail = async ( 
   options: nodemailer.SendMailOptions,
