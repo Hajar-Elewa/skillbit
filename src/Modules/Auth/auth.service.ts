@@ -22,16 +22,18 @@ export class AuthService {
 
   const otp = generateOTP(6);
   
-  const emailSent= await sendEmail({
-    to: dto.email,
-    from: process.env.EMAIL,
-    subject: 'OTP Request',
+  //using try catch to handle email sending errors
+  try {
+    await sendEmail({
+      to: dto.email,
+      from: process.env.EMAIL,
+      subject: 'OTP Request',
     html: `<h1>Hello ${dto.fullname}</h1>
              <p>Your OTP is: <strong>${otp}</strong></p>
              <p>This OTP will expire in 10 minutes.</p>`
   })
-
-  if(!emailSent){
+  }catch(error){
+    console.log(error)
     throw new InternalServerErrorException('Failed to send email, please try again')
   }
   const createdUser = await this.userRepo.create({
