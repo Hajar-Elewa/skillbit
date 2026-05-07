@@ -21,6 +21,12 @@ export class AuthService {
 
     const otp = generateOTP(6)
 
+    // const emailSent =  sendEmail({
+    //   to: dto.email,
+    //   from: process.env.EMAIL,
+    //   subject: 'confirmation email',
+    //   html: `<h1>Welcome ${dto.fullname}</h1><p>Please confirm your email using this OTP: ${otp}</p>`
+    // })
     //using try catch
     try {
       await sendEmail({
