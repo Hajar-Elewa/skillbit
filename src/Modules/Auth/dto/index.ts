@@ -13,7 +13,6 @@ export class signUpDto {
     @IsEmail()
     email:string;
 
-   
     @IsNotEmpty()
     password:string;
 
