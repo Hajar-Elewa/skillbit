@@ -314,7 +314,7 @@ export class ContestService {
 
     // send to challenger
     await sendEmail({
-      to: challenger?.email.toString(),
+      to: challenger?.email as string,
       subject: '⚔️ Your Duel is Starting!',
       html: `
         <h1>Hello ${challenger?.fullname}!</h1>
@@ -325,7 +325,7 @@ export class ContestService {
 
     // send to challenged
     await sendEmail({
-      to: challenged?.email.toString(),
+      to: challenged?.email as string,
       subject: '⚔️ You Have Been Challenged!',
       html: `
         <h1>Hello ${challenged?.fullname}!</h1>
@@ -341,7 +341,7 @@ export class ContestService {
     const job = new CronJob(reminderTime, async () => {
       // send to challenger
       await sendEmail({
-        to: challenger?.email.toString(),
+        to: challenger?.email as string,
         subject: '⚔️ Your Duel is Starting!',
         html: `
         <h1>Hello ${challenger?.fullname}!</h1>
@@ -352,7 +352,7 @@ export class ContestService {
 
       // send to challenged
       await sendEmail({
-        to: challenged as any.email,
+        to: challenged?.email as string,
         subject: '⚔️ You Have Been Challenged!',
         html: `
         <h1>Hello ${challenged?.fullname}!</h1>
