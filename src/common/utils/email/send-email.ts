@@ -1,12 +1,8 @@
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import 'dotenv/config';
-import mongoose from 'mongoose';
 
 const client = SibApiV3Sdk.ApiClient.instance;
-
-const apiKey = client.authentications['api-key'];
-
-apiKey.apiKey = process.env.BREVO_API_KEY!;
+client.authentications['api-key'].apiKey = process.env.BREVO_API_KEY!;
 
 const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
@@ -15,27 +11,18 @@ export const sendEmail = async ({
   subject,
   html,
 }: {
-  to: string | mongoose.Schema.Types.ObjectId;
+  to: string;       // ✅ string only, no ObjectId
   subject: string;
   html: string;
 }) => {
-  try {
-    await tranEmailApi.sendTransacEmail({
-      sender: {
-        email: process.env.SENDER_EMAIL!,
-        name: 'Skillbit',
-      },
-
-      to: [{ email: to }],
-
-      subject,
-
-      htmlContent: html,
-    });
-
-    return true;
-  } catch (error) {
-    console.log(error);
-    return false;
-  }
+  // ✅ Let the error bubble up to the caller
+  await tranEmailApi.sendTransacEmail({
+    sender: {
+      email: process.env.SENDER_EMAIL!,
+      name: 'Skillbit',
+    },
+    to: [{ email: to }],
+    subject,
+    htmlContent: html,
+  });
 };

@@ -21,7 +21,6 @@ export class AuthService {
 
   const otp = generateOTP(6);
 
-  // ✅ Create user FIRST
   const createdUser = await this.userRepo.create({
     fullname: dto.fullname,
     email: dto.email,
@@ -35,19 +34,14 @@ export class AuthService {
     },
   });
 
-  // ✅ Then send email (don't block signup if it fails)
-  try {
-    const result= sendEmail({
-      to: dto.email,
-      subject: 'OTP Request',
-      html: `<h1>Hello ${createdUser.fullname}</h1>
-             <p>Your OTP is: <strong>${otp}</strong></p>
-             <p>This OTP will expire in 10 minutes.</p>`,
-    });
-    console.log('Brevo result:', result);
-  } catch (error) {
-    console.error('Email failed:', error); // log but don't crash signup
-  }
+  // ✅ Fire and forget — doesn't block response
+  sendEmail({
+    to: dto.email,
+    subject: 'OTP Request',
+    html: `<h1>Hello ${createdUser.fullname}</h1>
+           <p>Your OTP is: <strong>${otp}</strong></p>
+           <p>This OTP will expire in 10 minutes.</p>`,
+  }).catch(err => console.error('Email failed:', err));
 
   return {
     fullname: createdUser.fullname,
@@ -55,7 +49,6 @@ export class AuthService {
     role: createdUser.role,
   };
 }
-
     //with google and github we will skip email verification and directly set isVerified to true
   async googleLogin(googleLoginDto: googleLoginDto) {
     //get data from request
