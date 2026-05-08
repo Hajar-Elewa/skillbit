@@ -1,5 +1,6 @@
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import 'dotenv/config';
+import mongoose from 'mongoose';
 
 const client = SibApiV3Sdk.ApiClient.instance;
 
@@ -14,7 +15,7 @@ export const sendEmail = async ({
   subject,
   html,
 }: {
-  to: string;
+  to: string | mongoose.Schema.Types.ObjectId;
   subject: string;
   html: string;
 }) => {

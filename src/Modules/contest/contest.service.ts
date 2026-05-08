@@ -85,7 +85,6 @@ export class ContestService {
     // send email to participant
     await sendEmail({
       to: user.email,
-      from: process.env.EMAIL,
       subject: '🏆 Contest Registration Confirmed!',
       html: `<h1>Hello ${user.fullname}!</h1>
          <p>You have successfully joined: <strong>${contest.title}</strong></p>
@@ -98,7 +97,6 @@ export class ContestService {
     const job = new CronJob(reminderTime, async () => {
       await sendEmail({
         to: user.email,
-        from: process.env.EMAIL,
         subject: '⏰ Contest Starting in 15 Minutes!',
         html: `<h1>Hello ${user.fullname}!</h1>
                <p><strong>${contest.title}</strong> starts in 15 minutes! 💪</p>`
@@ -316,8 +314,7 @@ export class ContestService {
 
     // send to challenger
     await sendEmail({
-      to: challenger?.email,
-      from: process.env.EMAIL,
+      to: challenger?.email.toString(),
       subject: '⚔️ Your Duel is Starting!',
       html: `
         <h1>Hello ${challenger?.fullname}!</h1>
@@ -328,8 +325,7 @@ export class ContestService {
 
     // send to challenged
     await sendEmail({
-      to: challenged?.email,
-      from: process.env.EMAIL,
+      to: challenged?.email.toString(),
       subject: '⚔️ You Have Been Challenged!',
       html: `
         <h1>Hello ${challenged?.fullname}!</h1>
@@ -345,8 +341,7 @@ export class ContestService {
     const job = new CronJob(reminderTime, async () => {
       // send to challenger
       await sendEmail({
-        to: challenger?.email,
-        from: process.env.EMAIL,
+        to: challenger?.email.toString(),
         subject: '⚔️ Your Duel is Starting!',
         html: `
         <h1>Hello ${challenger?.fullname}!</h1>
@@ -357,8 +352,7 @@ export class ContestService {
 
       // send to challenged
       await sendEmail({
-        to: challenged?.email,
-        from: process.env.EMAIL,
+        to: challenged as any.email,
         subject: '⚔️ You Have Been Challenged!',
         html: `
         <h1>Hello ${challenged?.fullname}!</h1>
