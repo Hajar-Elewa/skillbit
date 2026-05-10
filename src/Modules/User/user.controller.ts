@@ -35,7 +35,7 @@ export class UserController {
 }
 
     @Delete('delete')
-        async deleteUser(@Req() req: AuthReq) {
+       async deleteUser(@Req() req: AuthReq) {
         await this.userService.deleteUser(req.user['_id'])
         return { message: 'User deleted successfully' }
         }

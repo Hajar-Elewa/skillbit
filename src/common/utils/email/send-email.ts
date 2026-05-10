@@ -11,11 +11,10 @@ export const sendEmail = async ({
   subject,
   html,
 }: {
-  to: string;       // ✅ string only, no ObjectId
+  to: string;       
   subject: string;
   html: string;
 }) => {
-  // ✅ Let the error bubble up to the caller
   await tranEmailApi.sendTransacEmail({
     sender: {
       email: process.env.SENDER_EMAIL!,
