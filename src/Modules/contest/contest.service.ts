@@ -83,13 +83,13 @@ export class ContestService {
     })
 
     // send email to participant
-    await sendEmail({
+     sendEmail({
       to: user.email as string,
       subject: '🏆 Contest Registration Confirmed!',
       html: `<h1>Hello ${user.fullname}!</h1>
          <p>You have successfully joined: <strong>${contest.title}</strong></p>
          <p>Starts at: <strong>${contest.startTime}</strong></p>`
-    })
+    }).catch(err => console.error('Email failed:', err));
 
     // schedule reminder 15 min before
     const reminderTime = new Date(contest.startTime.getTime() - 15 * 60 * 1000)
@@ -313,7 +313,7 @@ export class ContestService {
 
 
     // send to challenger
-    await sendEmail({
+    sendEmail({
       to: challenger!.email as string,
       subject: '⚔️ Your Duel is Starting!',
       html: `
@@ -321,7 +321,7 @@ export class ContestService {
         <p>Your duel against <strong>${challenged?.fullname}</strong> starts on: <strong>${contest?.startTime}</strong></p>
         <p>Good luck! ⚔️</p>
       `
-    })
+    }).catch(err => console.error('Email failed:', err));
 
     // send to challenged
     await sendEmail({

@@ -4,6 +4,7 @@ import { UserRepo } from "src/Models/User/user.repo";
 import { googleLoginDto, loginDto, signUpDto } from "./dto";
 import { OAuth2Client } from "google-auth-library";
 import { User } from "src/Models/User/user.schema";
+import { error } from "console";
 
 
 @Injectable()
@@ -44,6 +45,7 @@ export class AuthService {
   }).catch(err => console.error('Email failed:', err));
 
   return {
+    id: createdUser['_id'],
     fullname: createdUser.fullname,
     email: createdUser.email,
     role: createdUser.role,
@@ -137,17 +139,14 @@ export class AuthService {
     if (!user.isVerified) {
       const otp = generateOTP(6)
       //using try catch to handle email sending errors
-      try {
-       await sendEmail({
+     
+        sendEmail({
         to: user.email,
         subject: 'New OTP Request',
         html: `<h1>Hello ${user.fullname}</h1>
              <p>Your new OTP is: <strong>${otp}</strong></p>
              <p>This OTP will expire in 10 minutes.</p>`
-      })
-    }catch(error){
-      throw new InternalServerErrorException('Failed to send email, please try again')
-    }
+    }).catch(err => console.error('Email failed:', err));
 
       await this.userRepo.Update({
         filter: { email: user.email },
@@ -193,18 +192,13 @@ export class AuthService {
 
     const otp = generateOTP(6)
 
-   try {
-    await sendEmail({
+    sendEmail({
       to: user.email,
       subject: 'OTP Request',
       html: `<h1>Hello ${user.fullname}</h1>
              <p>Your OTP is: <strong>${otp}</strong></p>
              <p>This OTP will expire in 10 minutes.</p>`
-  })
-  }catch(error){
-    console.log(error)
-    throw new InternalServerErrorException('Failed to send email, please try again')
-  }
+ }).catch(err => console.error('Email failed:', err));
 
     await this.userRepo.Update({
       filter: { email },
@@ -249,17 +243,13 @@ export class AuthService {
 
     const otp = generateOTP(6)
 
-   try {
-    await sendEmail({
+    sendEmail({
       to: email,
       subject: 'Reset Password',
       html: `<h1>Hello ${user.fullname}</h1> 
                  <p>Your reset password OTP is: <strong>${otp}</strong></p>
                  <p>This OTP will expire in 10 minutes.</p>`
-    })
-   }catch(error){
-    throw new InternalServerErrorException('Failed to send email, please try again')
-   }
+   }).catch(err => console.error('Email failed:', err));
 
     //update user with new otp and set it expires in 10 minutes
     await this.userRepo.Update({
