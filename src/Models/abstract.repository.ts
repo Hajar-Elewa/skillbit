@@ -6,6 +6,7 @@ import {
   Types,
   UpdateQuery,
   QueryFilter,
+  DeleteResult,
 } from 'mongoose'
 
 
@@ -110,24 +111,24 @@ export abstract class DBService<T> { //abstract class to avoid direct instantiat
   }
 
   async deleteOne({
-    filter,
-    options = {},
-  }: {
-    filter: QueryFilter<T>
-    options?: MongooseBaseQueryOptions<T>
-  }) {
-    return await this.model.deleteOne(filter, options)
-  }
+  filter,
+  options = {},
+}: {
+  filter: QueryFilter<T>
+  options?: MongooseBaseQueryOptions<T>
+}): Promise<DeleteResult> {
+  return await this.model.deleteOne(filter, options)
+}
 
-  async deleteMany({
-    filter,
-    options = {},
-  }: {
-    filter: QueryFilter<T>
-    options?: MongooseBaseQueryOptions<T>
-  }) {
-    return await this.model.deleteMany(filter, options)
-  }
+async deleteMany({
+  filter,
+  options = {},
+}: {
+  filter: QueryFilter<T>
+  options?: MongooseBaseQueryOptions<T>
+}): Promise<DeleteResult> {
+  return await this.model.deleteMany(filter, options)
+}
 
   
 }
