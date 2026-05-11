@@ -1,15 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { CourseRepo } from 'src/Models/Cousrses/course.repo';
-import { CourseType } from 'src/Models/Cousrses/course.schema';
-import { LevelRepo } from 'src/Models/Levels/level.repo';
-import { LessonRepo } from 'src/Models/Lessons/lesson.repo';
+import { CourseRepo } from '../../Models/Cousrses/course.repo';
+import { CourseType } from '../../Models/Cousrses/course.schema';
+import { LevelRepo } from '../../Models/Levels/level.repo';
+import { LessonRepo } from '../../Models/Lessons/lesson.repo';
 import { CreateBulkCoursesDto, CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
-import { UserRepo } from 'src/Models/User/user.repo';
-import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
+import { UserRepo } from '../../Models/User/user.repo';
+import { QuizRepo } from '../../Models/Quizes/quiz.repo';
 import { AchievementService } from '../achievement/achievement.service';
-import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
+import { EnrollmentRepo } from '../../Models/Enrollments/enrollment.repo';
 
 @Injectable()
 export class CourseService {
@@ -63,7 +63,7 @@ export class CourseService {
     const lessonsWithQuizzes = await Promise.all(
       lessons.map(async (lesson) => {
         const quiz = await this.quizRepo.findOne({
-          filter: { lesson: lesson['_id'] } // ✅ check your schema field name
+          filter: { lessonId: lesson['_id'] } // ✅ check your schema field name
         })
         return {
           ...lesson.toObject(),
@@ -81,7 +81,6 @@ export class CourseService {
   async getCourseByName(name: string) {
     const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') //means if there is any special character in the name it will be treated as a normal character and not a special character in the regex.
     const courses = await this.courseRepo.find({ title: { $regex: escaped, $options: 'i' } }, {}, { sort: { order: 1 } });
-    console.log(courses)
     return courses;
   }
 

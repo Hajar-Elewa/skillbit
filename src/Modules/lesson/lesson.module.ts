@@ -24,10 +24,11 @@ import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
       { name: User.name, schema: UserSchema },
       { name: Quiz.name, schema: QuizSchema },
       { name: Enrollment.name, schema: EnrollmentSchema },
+      {name:Quiz.name,schema:QuizSchema}
     ]),
   ],
   controllers: [LessonController],
-  providers: [LessonService, LessonRepo, CourseRepo, UserRepo, TokenService, Reflector, QuizRepo, JwtService, EnrollmentRepo],
+  providers: [LessonService, LessonRepo, CourseRepo, UserRepo, TokenService, Reflector, QuizRepo, JwtService, EnrollmentRepo,QuizRepo],
   exports: [LessonService, LessonRepo],
 })
 export class LessonModule { }

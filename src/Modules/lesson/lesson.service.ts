@@ -1,10 +1,11 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { LessonRepo } from 'src/Models/Lessons/lesson.repo';
-import { CourseRepo } from 'src/Models/Cousrses/course.repo';
+import { LessonRepo } from '../../Models/Lessons/lesson.repo';
+import { CourseRepo } from '../../Models/Cousrses/course.repo';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
-import { uploadToCloudinary } from 'src/common/utils/cloudinary';
+import { uploadToCloudinary } from '../../common/utils/cloudinary';
+import { QuizRepo } from '../../Models/Quizes/quiz.repo';
 
 //OOP 
  //=>>
@@ -16,7 +17,9 @@ import { uploadToCloudinary } from 'src/common/utils/cloudinary';
 export class LessonService {
   constructor(
     private readonly lessonRepo: LessonRepo,
-    private readonly courseRepo: CourseRepo,    
+    private readonly courseRepo: CourseRepo, 
+    private readonly quizRepo: QuizRepo,
+       
   ) {}
 
   async createLesson(dto: CreateLessonDto) {
@@ -70,7 +73,12 @@ export class LessonService {
      if (lesson.isLocked) {
       throw new ForbiddenException('You can not access this lesson');
     }
-    return {lesson};
+    //get quiz of lesson
+    const quiz = await this.quizRepo.findOne({filter:{lessonId:lessonId}})
+    
+
+    return {lesson,quiz} 
+    
   }
 
   async uploadMaterial(lessonId: string, file: Express.Multer.File) {

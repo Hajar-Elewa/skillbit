@@ -33,9 +33,6 @@ export class CreateQuizDto {
   @IsNotEmpty()
   title: string;
 
-  @IsMongoId()
-  courseId: string;
-
   @IsOptional()
   @IsMongoId()
   lessonId?: string; // omit for a final-course quiz
@@ -47,7 +44,8 @@ export class CreateQuizDto {
   @ValidateNested({ each: true })
   @ArrayMinSize(1)
   @Type(() => QuestionDto)
-  questions: QuestionDto[];
+  @IsOptional()
+  questions?: QuestionDto[];
 
   @IsOptional()
   @IsNumber()

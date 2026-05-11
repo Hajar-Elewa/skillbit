@@ -14,12 +14,13 @@ import { SubmitQuizDto } from './dto/submit-quiz.dto';
 import { Auth } from 'src/common/decorators/auth.decorator';
 import type { AuthReq } from '../../common/AuthReq';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
+import { UserRoles } from 'src/common';
 
 @Controller('quiz')
 export class QuizController {
   constructor(private readonly quizService: QuizService) { }
 
-  @Auth('Admin')
+  @Auth(UserRoles.Admin)
   @Post('create')
   async createQuiz(@Body() createQuizDto: CreateQuizDto) {
     const quiz = await this.quizService.createQuiz(createQuizDto)

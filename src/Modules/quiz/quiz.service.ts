@@ -5,15 +5,15 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { QuizRepo } from 'src/Models/Quizes/quiz.repo';
-import { LessonRepo } from 'src/Models/Lessons/lesson.repo';
-import { CourseRepo } from 'src/Models/Cousrses/course.repo';
+import { QuizRepo } from '../../Models/Quizes/quiz.repo';
+import { LessonRepo } from '../../Models/Lessons/lesson.repo';
+import { CourseRepo } from '../../Models/Cousrses/course.repo';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
-import { QuizAttemptRepo } from 'src/Models/Quizes/quizAttempt.repo';
-import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
+import { QuizAttemptRepo } from '../../Models/Quizes/quizAttempt.repo';
+import { EnrollmentRepo } from '../../Models/Enrollments/enrollment.repo';
 import { SubmitQuizDto } from './dto/submit-quiz.dto';
-import { UserRepo } from 'src/Models/User/user.repo';
+import { UserRepo } from '../../Models/User/user.repo';
 
 @Injectable()
 export class QuizService {
@@ -27,11 +27,6 @@ export class QuizService {
   ) { }
 
   async createQuiz(createQuizDto: CreateQuizDto) {
-    const course = await this.courseRepo.findById({ id: createQuizDto.courseId })
-    if (!course) {
-      throw new NotFoundException('Course not found')
-    }
-
     const lesson = await this.lessonRepo.findById({ id: createQuizDto.lessonId })
     if (!lesson) {
       throw new NotFoundException('Lesson not found')
@@ -50,43 +45,21 @@ export class QuizService {
     return quiz
   }
 
-  async updateQuiz(quizId: string, updateQuizDto: UpdateQuizDto) {
-    const quiz = await this.quizRepo.findByIdAndUpdate({
-      id: quizId,
-      update: updateQuizDto,
-      options: { new: true }
-    })
-
-    if (!quiz) {
-      throw new NotFoundException('Quiz not found')
-    }
-
-    return quiz
-  }
-
-  async deleteQuiz(quizId: string) {
-    // 1. delete quiz
-    const quiz = await this.quizRepo.findByIdAndDelete({ id: quizId })
-    if (!quiz) {
-      throw new NotFoundException('Quiz not found')
-    }
-
-    // 2. delete all attempts related to this quiz
-    await this.quizAttemptRepo.deleteOne({ filter: { quizId: quizId as any } })
-
-    return true
-  }
-
   async startQuiz(quizId: string, userId: string) {
     // 1. check quiz exists
     const quiz = await this.quizRepo.findById({ id: quizId })
     if (!quiz) {
       throw new NotFoundException('Quiz not found')
     }
+    //if quiz has no questions return empty array
+    if(!quiz.questions?.length){
+      return []
+    }
 
     // 2. check enrollment
+    const lesson = await this.lessonRepo.findById({ id: quiz.lessonId })
     const enrollment = await this.enrollmentRepo.findOne({
-      filter: { userId, courseId: quiz.courseId }
+      filter: { userId, courseId: lesson?.course }
     })
     if (!enrollment) {
       throw new ForbiddenException('You are not enrolled in this course')
@@ -95,7 +68,7 @@ export class QuizService {
     // 3. check previous quiz passed
     if (quiz.order > 1) {
       const previousQuiz = await this.quizRepo.findOne({
-        filter: { courseId: quiz.courseId, order: quiz.order - 1 }
+        filter: { lessonId: quiz.lessonId, order: quiz.order - 1 }
       })
       if (previousQuiz) {
         const isPreviousPassed = enrollment.completedQuizes
@@ -201,11 +174,13 @@ export class QuizService {
       }
     })
 
+    const lesson = await this.lessonRepo.findById({ id: quiz.lessonId })
+
     // 7. if passed → update enrollment + user score + unlock next lesson
     if (passed) {
       // add quiz to completedQuizes
       await this.enrollmentRepo.findOneAndUpdate({
-        filter: { userId, courseId: quiz.courseId },
+        filter: { userId, courseId: lesson?.course },
         update: { $push: { completedQuizes: quizId } }
       })
 
@@ -217,7 +192,7 @@ export class QuizService {
 
       // unlock next lesson
       const nextLesson = await this.lessonRepo.findOne({
-        filter: { courseId: quiz.courseId, order: quiz.order + 1 }
+        filter: { courseId: lesson?.course, order: quiz.order + 1 }
       })
       if (nextLesson) {
         await this.lessonRepo.findByIdAndUpdate({
@@ -277,5 +252,32 @@ export class QuizService {
       xpEarned: attempt.xpEarned,
       questionsWithAnswers
     }
+  }
+
+  async updateQuiz(quizId: string, updateQuizDto: UpdateQuizDto) {
+    const quiz = await this.quizRepo.findByIdAndUpdate({
+      id: quizId,
+      update: updateQuizDto,
+      options: { new: true }
+    })
+
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found')
+    }
+
+    return quiz
+  }
+
+  async deleteQuiz(quizId: string) {
+    // 1. delete quiz
+    const quiz = await this.quizRepo.findByIdAndDelete({ id: quizId })
+    if (!quiz) {
+      throw new NotFoundException('Quiz not found')
+    }
+
+    // 2. delete all attempts related to this quiz
+    await this.quizAttemptRepo.deleteOne({ filter: { quizId: quizId as any } })
+
+    return true
   }
 }

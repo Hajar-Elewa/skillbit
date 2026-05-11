@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { AchievementRepo } from 'src/Models/Achievements/achievement.repo';
-import { UserRepo } from 'src/Models/User/user.repo';
+import { AchievementRepo } from '../../Models/Achievements/achievement.repo';
+import { UserRepo } from '../../Models/User/user.repo';
 import { CreateAchievementDto } from './dto/create-achievement.dto';
 import { UpdateAchievementDto } from './dto/update-achievement.dto';
-import { CourseRepo } from 'src/Models/Cousrses/course.repo';
-import { EnrollmentRepo } from 'src/Models/Enrollments/enrollment.repo';
+import { CourseRepo } from '../../Models/Cousrses/course.repo';
+import { EnrollmentRepo } from '../../Models/Enrollments/enrollment.repo';
 
 
 @Injectable()
@@ -50,8 +50,6 @@ export class AchievementService {
   async getAllAchievements() {
     return await this.achievementRepo.find({})
   }
-
-
 
   
   // check level achievements after course completed
