@@ -4,14 +4,14 @@ import { CreateContestDto } from './dto/create-contest.dto';
 import { Auth, AuthGuard, UserRoles } from 'src/common';
 import type { AuthReq } from 'src/common/AuthReq';
 import { SubmitContestDto } from './dto/submitContestDto';
-import { SendDuelRequestDto } from './dto/sendDuelRequest.dto';
+
 
 @Controller('contest')
 export class ContestController {
   constructor(private readonly contestService: ContestService) {}
 
   // Global Contest
-  @Auth(UserRoles.Admin)
+  @Auth(UserRoles.Admin) 
   @Post('create')
   async createContest(@Body() dto: CreateContestDto) {
     const contest = await this.contestService.createContest(dto)
@@ -25,6 +25,15 @@ export class ContestController {
     return { message: 'Joined contest successfully' }
   }
 
+  
+  @Auth(UserRoles.Admin) 
+  @Post('start/:id')
+  async startContest(@Param('id') contestId: string, @Req() req: AuthReq) {
+    const questions = await this.contestService.startContest( contestId)
+    return { message: 'Contest started successfully',data: questions }
+  }
+  
+
   @UseGuards(AuthGuard)
   @Post('submit/:id')
   async submitContest(
@@ -36,12 +45,14 @@ export class ContestController {
     return { message: 'Contest submitted successfully', data: result }
   }
 
+
   @UseGuards(AuthGuard)
   @Get('results/:id')
   async getContestResults(@Param('id') contestId: string, @Req() req: AuthReq) {
     const result = await this.contestService.getContestResults(req.user['_id'], contestId)
     return { message: 'Results fetched successfully', data: result }
   }
+
 
   @UseGuards(AuthGuard)
   @Get('answers/:id')
@@ -50,6 +61,7 @@ export class ContestController {
     return { message: 'Answers fetched successfully', data: result }
   }
 
+  
   // Duel Contest
   @UseGuards(AuthGuard)
   @Post('duel/send/:id')

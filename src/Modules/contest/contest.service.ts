@@ -8,6 +8,7 @@ import { DuelRequestRepo } from 'src/Models/Contests/duel.request.repo';
 import { sendEmail } from 'src/common';
 import { CronJob } from 'cron';
 import { SchedulerRegistry } from '@nestjs/schedule';
+import { AchievementService } from '../achievement/achievement.service';
 
 @Injectable()
 export class ContestService {
@@ -17,7 +18,9 @@ export class ContestService {
     private readonly contestResultRepo: ContestResultRepo,
     private readonly duelRequestRepo: DuelRequestRepo,
     private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly achievementService: AchievementService
   ) { }
+
 
   async createContest(dto: CreateContestDto) {
     // delete old finished contests for same level and type
@@ -34,14 +37,14 @@ export class ContestService {
       filter: {
         level: dto.level,
         type: dto.type,
-        startTime: {
+        startTime: {//5 pm to 5:30pm
           $gte: dto.startTime,
-          $lt: new Date(new Date(dto.startTime).getTime() + dto.duration * 60 * 1000)
+          $lt: new Date(new Date(dto.startTime).getTime() + dto.duration * 60 * 1000)//this line calculate end time[5:30pm]
         }
       }
     })
     if (existingContest)
-      throw new ConflictException('A contest already exists at this time')
+      throw new ConflictException('There is a  contest already exists at this time')
 
     // 2. create contest
     const contest = await this.contestRepo.create({
@@ -71,7 +74,7 @@ export class ContestService {
 
     // 4. check if user already joined
     const alreadyJoined = contest.participants
-      .some(id => id.toString() === user._id.toString())
+      .some(id => id.toString() === user._id.toString())//some used for checking if any element in array satisfies the condition.
     if (alreadyJoined) {
       throw new BadRequestException('You already joined this contest')
     }
@@ -108,18 +111,31 @@ export class ContestService {
     return true
   }
 
-  async submitContest(user: any, contestId: string, answers: number[], timeTaken: number) {
+  async startContest(contestId: string) {
     const contest = await this.contestRepo.findById({ id: contestId })
     if (!contest) throw new NotFoundException('Contest not found')
 
-    if (contest.status !== 'active')
-      throw new BadRequestException('Contest is not active')
+    if (contest.status === 'active') throw new BadRequestException('Contest is already active')
+    if (contest.status === 'finished') throw new BadRequestException('Contest is already finished')
 
+    await this.contestRepo.findByIdAndUpdate({
+      id: contestId,
+      update: { status: 'active' }
+    })
+  
+    //return queztions of contest
+    return { questions : contest.questions }
+  }
+
+  async submitContest(user: any, contestId: string, answers: number[], timeTaken: number) {
+    const contest = await this.contestRepo.findById({ id: contestId })
+    if (!contest) throw new NotFoundException('Contest not found')
+    
     const isParticipant = contest.participants
       .some(id => id.toString() === user._id.toString())
     if (!isParticipant)
       throw new ForbiddenException('You are not a participant in this contest')
-
+    
     const existingResult = await this.contestResultRepo.findOne({
       filter: { contestId, userId: user._id }
     })
@@ -130,12 +146,13 @@ export class ContestService {
     let totalLost = 0
     let correctCount = 0
 
+  
     contest.questions.forEach((q, index) => {
-      if (answers[index] === -1 || answers[index] === undefined) return
+      if (answers[index] === -1 || answers[index] === undefined) return//means question is not answered return to the next iteration
 
       const isCorrect = q.correctAnswerIndex === answers[index]
       if (isCorrect) correctCount++
-
+    
       const { gained, lost } = calculateQuestionScore(
         contest.questionScore,
         user.level,
@@ -163,7 +180,11 @@ export class ContestService {
       id: user._id,
       update: { $inc: { score: totalScore - totalLost } }
     })
-
+  
+    //check achievements
+    await this.achievementService.checkRankAchievements(user._id)
+    
+  
     return {
       correctCount,
       totalQuestions: contest.questions.length,
@@ -173,58 +194,82 @@ export class ContestService {
     }
   }
 
-  async getContestResults(userId: string, contestId: string) {
-    const contest = await this.contestRepo.findById({ id: contestId })
-    if (!contest) throw new NotFoundException('Contest not found')
+ async getContestResults(userId: string, contestId: string) {
+  const contest = await this.contestRepo.findById({ id: contestId })
+  if (!contest) throw new NotFoundException('Contest not found')
 
-    const allResults = await this.contestResultRepo.find(
-      { contestId: contestId as any },
-      {},
-      { sort: { score: -1, timeTaken: 1 } }
-    )
+  const allResults = await this.contestResultRepo.find(
+    { contestId: contestId as any },
+    {},
+    { sort: { score: -1, timeTaken: 1 } }
+  )
 
-    const myResult = await this.contestResultRepo.findOne({
-      filter: { contestId, userId }
-    })
+  // duel → winner/loser only
+  if (contest.type === 'duel') {
+    if (allResults.length < 2)
+      throw new BadRequestException('Both users must submit first')
 
-    // duel → winner/loser only
-    if (contest.type === 'duel') {
-      if (allResults.length < 2)
-        throw new BadRequestException('Both users must submit first')
-
-      const winner = allResults[0]
-      const loser = allResults[1]
-
-      return {
-        type: 'duel',
-        winner: winner.userId,
-        loser: loser.userId,
-        myResult,
-        results: allResults
-      }
-    }
-
-    // global → top 3 + leaderboard bonus
-    const top3 = allResults.slice(0, 3).map((result, index) => {
-      const position = index + 1
-      const bonus = leaderboardModifiers[position] || 1
-      return {
-        userId: result.userId,
-        score: Math.floor(result.score * bonus),
-        rank: position,
-        timeTaken: result.timeTaken
-      }
-    })
-
-    const userRank = allResults
-      .findIndex(r => r.userId.toString() === userId.toString()) + 1
+    const winner = allResults[0]
+    const loser = allResults[1]
 
     return {
-      type: 'global',
-      myResult,
-      userRank,
-      top3
+      type: 'duel',
+      winner: winner.userId,
+      loser: loser.userId,
+      results: allResults
     }
+  }
+
+
+  // global → top 3 + leaderboard bonus
+  const top3 = await Promise.all( 
+    allResults.slice(0, 3).map(async (result, index) => {
+      const position = index + 1
+      const bonus = leaderboardModifiers[position] 
+
+      // get user data
+      const user = await this.userRepo.findById({
+        id: result.userId,
+        projection: { fullname: 1, profilePicture: 1, rank: 1 }
+      })
+
+      return {// returns to the array, not the function,that's what Promise.all is for
+        rank: position,
+        score: Math.floor(result.score * bonus),
+        timeTaken: result.timeTaken,
+        fullname: user?.fullname,
+        profilePicture: user?.profilePicture,
+        badge: user?.rank,
+        achievements: user?.earnedAchievements
+      }
+    })
+  )
+
+  // get current user rank + data
+  const userRank = allResults
+    .findIndex(r => r.userId.toString() === userId.toString()) + 1
+    
+  const myResult = allResults.find(r => r.userId.toString() === userId.toString())
+
+  const me = await this.userRepo.findById({
+    id: userId,
+    projection: { fullname: 1, profilePicture: 1, rank: 1 }
+  })
+
+  return {
+    type: 'global',
+    top3,
+    myResult: {
+      rank: userRank,
+      score: myResult?.score,
+      timeTaken: myResult?.timeTaken,
+      correctCount: myResult?.correctCount,
+      fullname: me?.fullname,
+      profilePicture: me?.profilePicture,
+      badge: me?.rank,
+      achievements:me?.earnedAchievements
+    }
+  }
   }
 
   async getContestAnswers(userId: string, contestId: string) {
@@ -241,12 +286,11 @@ export class ContestService {
       options: q.options,
       correctAnswerIndex: q.correctAnswerIndex,
       chosenAnswerIndex: result.answers[index],
-      isCorrect: result.answers[index] === q.correctAnswerIndex,
-      isSkipped: result.answers[index] === -1
     }))
 
     return { score: result.score, correctCount: result.correctCount, questionsWithAnswers }
   }
+
 
   //Duel Contest
 
@@ -276,12 +320,28 @@ export class ContestService {
     })
     if (existingRequest) throw new BadRequestException('A duel request already exists')
 
+    //create contest
+    const contest = await this.contestRepo.create({
+      title: `Duel - ${user.fullname} vs ${challengedUser.fullname}`,
+      description: 'A duel contest between two players',
+      level: user.level,
+      type: 'duel',
+      duration: 60,
+      questionScore: 10,
+      difficulty: user.rank,
+      questions: [],
+      participants: [user._id, challengedId],
+      status: 'upcoming',
+      startTime: new Date(Date.now() + 60 * 60 * 1000) // 60 minutes from now
+    })
+
     // 5. create duel request
     const duelRequest = await this.duelRequestRepo.create({
       challengerId: user._id,
-      challengedId: challengedId
+      challengedId: challengedId,
+      contest
     })
-
+  
     return duelRequest
   }
 
@@ -305,7 +365,7 @@ export class ContestService {
     })
 
     const contest = await this.contestRepo.findById({ id: duelRequest.contestId })
-    if (!contest) throw new NotFoundException('Contest not found') // ✅ handle null
+    if (!contest) throw new NotFoundException('Contest not found') //handle null
 
     // get challenger and challenged users
     const challenger = await this.userRepo.findById({ id: duelRequest.challengerId })
@@ -386,6 +446,18 @@ export class ContestService {
       id: duelRequestId,
       update: { status: 'rejected' }
     })
+
+    //send email to challenger
+    const challenger = await this.userRepo.findById({ id: duelRequest.challengerId })
+    await sendEmail({
+      to: challenger!.email as string,
+      subject: '⚔️ Your Duel Request Was Rejected!',
+      html: `
+        <h1>Hello ${challenger?.fullname}!</h1>
+        <p>Your duel request against <strong>${user.fullname}</strong> has been rejected 😔</p>
+      `
+    })
+
     //delete from duel request
     await this.duelRequestRepo.deleteOne({ filter: { _id: duelRequestId } })
     return true

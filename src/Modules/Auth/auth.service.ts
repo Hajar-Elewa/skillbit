@@ -4,7 +4,6 @@ import { UserRepo } from "src/Models/User/user.repo";
 import { googleLoginDto, loginDto, signUpDto } from "./dto";
 import { OAuth2Client } from "google-auth-library";
 import { User } from "src/Models/User/user.schema";
-import { error } from "console";
 
 
 @Injectable()
@@ -35,7 +34,6 @@ export class AuthService {
     },
   });
 
-  // ✅ Fire and forget — doesn't block response
   sendEmail({
     to: dto.email,
     subject: 'OTP Request',
@@ -137,28 +135,9 @@ export class AuthService {
     }
 
     if (!user.isVerified) {
-      const otp = generateOTP(6)
-      //using try catch to handle email sending errors
-     
-        sendEmail({
-        to: user.email,
-        subject: 'New OTP Request',
-        html: `<h1>Hello ${user.fullname}</h1>
-             <p>Your new OTP is: <strong>${otp}</strong></p>
-             <p>This OTP will expire in 10 minutes.</p>`
-    }).catch(err => console.error('Email failed:', err));
-
-      await this.userRepo.Update({
-        filter: { email: user.email },
-        update: {
-          emailOtp: {
-            code: otp,
-            expiresAt: new Date(Date.now() + 10 * 60 * 1000) // fresh 10 minutes
-          }
-        }
-      })
-      throw new UnauthorizedException('You should confirm your email first, new OTP sent to your email')
+     throw new BadRequestException({isVerified:user.isVerified,message: 'You should confirm your email first'})
     }
+
     if (!await compare(dto.password, user.password)) {
       throw new UnauthorizedException('Invalid credentials')
     }
