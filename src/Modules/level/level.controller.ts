@@ -14,6 +14,7 @@ import { Auth } from 'src/common/decorators/auth.decorator';
 import { UserRoles } from 'src/common/enums/RolesEnum';
 import { AuthGuard } from 'src/common/guards/auth.guard';
 
+
 @Controller('levels')
 export class LevelController {
   constructor(private readonly levelService: LevelService) {}
