@@ -102,7 +102,6 @@ export class QuizService {
     const attempt = await this.quizAttemptRepo.create({
       userId,
       quizId,
-      courseId: quiz.courseId,
       lessonId: quiz.lessonId,
       status: 'in-progress'
     })
